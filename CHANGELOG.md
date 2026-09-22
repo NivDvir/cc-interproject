@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.0] — 2026-09-22
+
+First release. Installs the inter-project laws, registry, protocol and vocabulary files; each
+chosen project's own head writes its registry row at install time. Verified against the real
+Claude Code CLI in a disposable cloud sandbox (five runs; see `docs/STAGING.md`). Known limitation:
+the later self-replacement path for a fallback `installer` row is exercised by the offline harness
+only — see the README's "How each project writes its own row" section.
+
 ## [Unreleased]
 
 ### Changed
