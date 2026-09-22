@@ -11,6 +11,12 @@ refuse it — it is a participant, not a relay. Name the subject in your own ter
 internal path and ask the head to skip to it, since that strips the intermediate node of its role and
 any cross-cutting conflict only it could see ships silently.
 
+Do not read another project's files yourself — its `CLAUDE.md`, its code, anything under its
+directory — even to save a round trip or to double-check what you were told. That is verifying its
+domain yourself, which Law 3 rules out regardless of how the file was reached (a direct path, a
+glob, a shell `cat`). Asking its head is the only route in. What the registry says about a project
+is theirs to have written; what you learn by asking its head is evidence you gathered correctly.
+
 ## The three request kinds
 
 Name the kind explicitly, every time.
