@@ -9,10 +9,10 @@ This file is a map, not a duplicate of either.
 | File | Job |
 |---|---|
 | `api.py` | The eleven actions behind the endpoints. Each takes the `Run`, mutates it under `run.lock`, and returns a plain dict. The two long steps (`scan_start`, `install_start`) run on daemon threads and report through a lock-guarded progress dict the page polls. This is the one module here allowed to call across categories. |
-| `server.py` | `ThreadingHTTPServer` on `127.0.0.1:0`, the token / Host / Origin gates, the `(method, path)` dispatch table, and `render_page`, which inlines the four `assets/` files into one response. |
+| `server.py` | `ThreadingHTTPServer` on `127.0.0.1:0`, the token / Host / Origin gates, the `(method, path)` dispatch table, and `render_page`, which inlines the five `assets/` files into one response. |
 | `launch.py` | Decides whether a browser can be opened at all, prints the URL, opens it, and blocks in `serve_forever`. |
 | `terminal.py` | The same six steps as numbered stdin prompts, for `--no-browser` and for machines with no display. |
-| `assets/` | The real HTML, CSS, JS and SVG files; see `assets/ARCHITECTURE.md`. Never embedded as Python strings. |
+| `assets/` | The real HTML, CSS, JS (a controller and a renderer file) and SVG files; see `assets/ARCHITECTURE.md`. Never embedded as Python strings. |
 
 ## Request handling
 

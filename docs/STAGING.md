@@ -5,6 +5,13 @@ installer against it with the fake `claude` from `fixtures/claude_fake`; this ma
 `~/.claude` is never touched. `fixtures/forest` proves single behaviours, this proves they hold
 together on a messy one.
 
+Seven steps run in order: build, dry run, install, `--status`, re-install, `--uninstall`, and a
+last one that reads the forest back. Step 7 lives in `staging/tree_shape.py`: it imports the kit
+from the bundle under test, runs the wizard's own Scan step over the staging HOME, and checks two
+things about `code/platform` — that `GET /api/state`'s tree JSON nests three levels of subtree
+under the one head, and that `wizard/terminal.py` prints all four names with each indented further
+than the one above it.
+
 ## What the cases model
 
 | Case | Models | Why it is here |
@@ -18,7 +25,8 @@ together on a messy one.
 | `Projects/Client Work/acme site` | spaces in the path, French prose | quoting, and non-ASCII left alone |
 | `code/legacy` | an existing kit block with text after it | idempotence: still one block, tail intact |
 | `code/archive/old-app.backup-2025-01-01` | dots in the directory name | the `~/.claude/projects` encoding is lossy |
-| `code/link-to-webapp`, `code/deep/a/…/project` | a symlink to `code/webapp`; a project nine levels down | counted once and never followed; documented as NOT discovered (depth cap 6) |
+| `code/platform` | a head with a child, a grandchild and a great-grandchild (`services/billing/ledger`), plus a `.claude/worktrees/` copy at the bottom | one tree, four levels: the wizard cards, the heads table and the Review list must all nest it; the skip list still holds at the deepest level |
+| `code/link-to-webapp`, `code/deep/a/…/project` | a symlink to `code/webapp`; a `CLAUDE.md` nine levels down with no head above it | counted once and never followed; documented as NOT discovered — the head search stops at depth 6, and nothing on that branch made it a tree |
 | `code/swift-tool` | `.build/checkouts/dep/CLAUDE.md` | SwiftPM vendored material is skipped |
 | `.claude/` | the user's own `settings.json`, six encoded project dirs with transcripts, plugins and junk | `settings.json` must come out byte-identical |
 

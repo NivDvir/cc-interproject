@@ -1,8 +1,12 @@
 "use strict";
 
+/* The controller: the step machine, the HTTP client, and the six step transitions.
+   Everything that builds DOM lives in wizard2.js, which the page loads right after this file;
+   every call into it happens inside an event or poll callback, never at load time. */
+
 /* Step machine ------------------------------------------------------- */
 var STEPS = ["welcome", "scan", "heads", "review", "install", "done"];
-var state = { dryRun: false, trees: [], skippedRoots: [] };
+var state = { dryRun: false, trees: [], skippedRoots: [], selectedTrees: [] };
 var headsStart = {}; // path -> ms timestamp, for a client-side elapsed clock
 function showStep(name) {
   STEPS.forEach(function (s) {
@@ -73,7 +77,7 @@ function onScanTick(p) {
   var counter = document.getElementById("scan-counter");
   state.skippedRoots = p.skipped_roots || [];
   if (!p.done) {
-    counter.textContent = "Scanning\u2026 " + (p.dirs_seen || 0) + " directories checked.";
+    counter.textContent = "Scanning… " + (p.dirs_seen || 0) + " directories checked.";
     return;
   }
   counter.textContent = p.dirs_seen ? "Scan complete: " + p.dirs_seen + " directories checked." : "Scan complete.";
@@ -86,55 +90,6 @@ function onScanTick(p) {
     document.getElementById("btn-scan-next").disabled = state.trees.length === 0;
   });
 }
-function renderForest(trees) {
-  var root = document.getElementById("tree-root");
-  root.innerHTML = "";
-  trees.forEach(function (tree) { root.appendChild(renderTreeItem(tree, true)); });
-}
-var treeIdSeq = 0;
-function renderTreeItem(tree, isTop) {
-  var li = document.createElement("li");
-  if (!isTop) li.className = "inherited";
-  var label = document.createElement("label");
-  var nameId = "tree-name-" + treeIdSeq++;
-  if (isTop) {
-    var box = document.createElement("input");
-    box.type = "checkbox";
-    box.id = "tree-cb-" + nameId;
-    box.checked = true;
-    box.dataset.path = tree.path;
-    box.setAttribute("aria-labelledby", nameId);
-    label.appendChild(box);
-  }
-  var name = document.createElement("span");
-  name.id = nameId;
-  name.className = "tree-name";
-  name.textContent = tree.name;
-  label.appendChild(name);
-  var date = document.createElement("span");
-  date.className = "tree-date";
-  date.textContent = tree.has_session ? "last session " + tree.last_session : "no prior session";
-  label.appendChild(date);
-  li.appendChild(label);
-  if (tree.subtrees && tree.subtrees.length) {
-    var ul = document.createElement("ul");
-    tree.subtrees.forEach(function (sub) { ul.appendChild(renderTreeItem(sub, false)); });
-    li.appendChild(ul);
-  }
-  return li;
-}
-function renderSkipped(roots) {
-  var wrap = document.getElementById("skipped-wrap");
-  var list = document.getElementById("skipped-list");
-  list.innerHTML = "";
-  if (!roots || !roots.length) { wrap.hidden = true; return; }
-  roots.forEach(function (r) {
-    var li = document.createElement("li");
-    li.textContent = r;
-    list.appendChild(li);
-  });
-  wrap.hidden = false;
-}
 
 /* Scan -> Heads -------------------------------------------------------- */
 document.getElementById("btn-scan-next").addEventListener("click", function () {
@@ -142,50 +97,22 @@ document.getElementById("btn-scan-next").addEventListener("click", function () {
     document.querySelectorAll("#tree-root input[type=checkbox]:checked"),
     function (el) { return el.dataset.path; }
   );
+  state.selectedTrees = state.trees.filter(function (t) {
+    return selected.indexOf(t.path) !== -1;
+  });
   api.setSelection(selected).then(function () {
     showStep("heads");
-    var selectedTop = state.trees.filter(function (t) {
-      return document.querySelector('#tree-root input[data-path="' + cssEscape(t.path) + '"]:checked');
-    });
-    renderHeadsRows(flattenTrees(selectedTop, 0, null));
+    renderHeadsRows(state.selectedTrees);
     api.headsStart().then(function () {
       poll(api.headsProgress, 700, function (p) { return p.done; }, onHeadsTick);
     });
   });
 });
-function cssEscape(s) { return s.replace(/["\\]/g, "\\$&"); }
-
-/* Flattens selected trees plus their inherited subtrees into row descriptors,
-   so every project the server asks about (GET /api/heads) has a table row. */
-function flattenTrees(trees, depth, parentName) {
-  var rows = [];
-  trees.forEach(function (t) {
-    rows.push({ path: t.path, name: t.name, depth: depth, parent: parentName });
-    if (t.subtrees && t.subtrees.length) rows = rows.concat(flattenTrees(t.subtrees, depth + 1, t.name));
-  });
-  return rows;
-}
-function headsRow(r) {
-  headsStart[r.path] = Date.now();
-  var tr = document.createElement("tr");
-  tr.dataset.path = r.path;
-  var nameHtml = r.name + (r.parent ? ' <span class="tree-date">(subtree of ' + r.parent + ")</span>" : "");
-  tr.innerHTML =
-    '<td style="padding-left:' + (12 + r.depth * 16) + 'px">' + nameHtml + '</td>' +
-    '<td><span class="badge badge-waiting" data-role="badge">waiting</span></td>' +
-    '<td data-role="elapsed">0.0s</td>';
-  return tr;
-}
-function renderHeadsRows(rows) {
-  var body = document.getElementById("heads-tbody");
-  body.innerHTML = "";
-  rows.forEach(function (r) { body.appendChild(headsRow(r)); });
-}
 function onHeadsTick(p) {
   (p.results || []).forEach(function (row) {
     var tr = document.querySelector('#heads-tbody tr[data-path="' + cssEscape(row.path) + '"]');
     if (!tr) {
-      tr = headsRow({ path: row.path, name: row.path.split("/").pop() || row.path, depth: 0, parent: null });
+      tr = headsRow({ path: row.path, name: row.path.split("/").pop() || row.path, depth: 0 });
       document.getElementById("heads-tbody").appendChild(tr);
     }
     var badge = tr.querySelector('[data-role="badge"]');
@@ -203,47 +130,6 @@ document.getElementById("btn-heads-next").addEventListener("click", function () 
   showStep("review");
   api.plan().then(renderReview);
 });
-function renderReview(data) {
-  var warnings = document.getElementById("review-warnings");
-  warnings.innerHTML = "";
-  if (data.warnings && data.warnings.length) {
-    data.warnings.forEach(function (w) {
-      var li = document.createElement("li");
-      li.textContent = w;
-      warnings.appendChild(li);
-    });
-    warnings.hidden = false;
-  } else {
-    warnings.hidden = true;
-  }
-  var list = document.getElementById("review-actions");
-  list.innerHTML = "";
-  (data.actions || []).forEach(function (action) {
-    var li = document.createElement("li");
-    var details = document.createElement("details");
-    var summary = document.createElement("summary");
-    summary.innerHTML =
-      '<span class="action-kind">' + action.kind + '</span>' +
-      '<span class="action-target">' + action.target + '</span>' +
-      '<span class="action-flag">' + (action.existed ? "existing" : "new") + '</span>';
-    details.appendChild(summary);
-    var pre = document.createElement("pre");
-    pre.className = "diff";
-    pre.innerHTML = renderDiff(action.diff || "");
-    details.appendChild(pre);
-    li.appendChild(details);
-    list.appendChild(li);
-  });
-}
-function renderDiff(text) {
-  return text.split("\n").map(function (line) {
-    var escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-    if (line.indexOf("+++") === 0 || line.indexOf("---") === 0) return escaped;
-    if (line.indexOf("+") === 0) return '<span class="line-add">' + escaped + "</span>";
-    if (line.indexOf("-") === 0) return '<span class="line-del">' + escaped + "</span>";
-    return "<span>" + escaped + "</span>";
-  }).join("\n");
-}
 
 /* Review -> Install ------------------------------------------------------------ */
 document.getElementById("btn-confirm").addEventListener("click", function () {
@@ -262,7 +148,7 @@ function onInstallTick(p) {
   var total = p.total || 1;
   var completed = p.completed || 0;
   document.getElementById("progress-fill").style.width = Math.round((completed / total) * 100) + "%";
-  document.getElementById("install-current").textContent = p.current || "Working\u2026";
+  document.getElementById("install-current").textContent = p.current || "Working…";
   if (p.done) {
     api.done().then(renderDone);
     showStep("done");

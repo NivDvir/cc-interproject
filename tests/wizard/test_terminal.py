@@ -56,6 +56,52 @@ def test_install_flow_selects_two_projects_and_writes_the_manifest(
     assert registry_text.count("| self |") == 2
 
 
+def _tree(name: str, path: str, subtrees=None) -> dict:
+    return {
+        "name": name,
+        "path": path,
+        "has_session": False,
+        "last_session": None,
+        "selected": False,
+        "subtrees": subtrees or [],
+    }
+
+
+def test_forest_renders_each_tree_as_a_block_with_an_ascii_subtree():
+    great = _tree("Ledger", "/h/code/platform/services/billing/ledger")
+    grand = _tree("Billing", "/h/code/platform/services/billing", [great])
+    child = _tree("Services", "/h/code/platform/services", [grand])
+    trees = [_tree("Platform", "/h/code/platform", [child]), _tree("Webapp", "/h/code/webapp")]
+
+    lines = terminal._render_forest(trees)
+
+    assert lines[0].startswith("  [1] Platform")
+    assert "3 subtrees" in lines[0]
+    assert "/h/code/platform" in lines[0]
+    assert lines[1] == "      └── Services  (/h/code/platform/services, no prior session)"
+    assert lines[2].startswith("          └── Billing")
+    assert lines[3].startswith("              └── Ledger")
+    heads = [line for line in lines if line.startswith("  [")]
+    assert len(heads) == 2
+    assert "no subtrees" in heads[1]
+
+
+def test_forest_uses_the_branch_connector_for_a_middle_subtree():
+    trees = [
+        _tree(
+            "Mono",
+            "/h/mono",
+            [_tree("Ui", "/h/mono/ui", [_tree("Deep", "/h/mono/ui/deep")]), _tree("Core", "/h/mono/core")],
+        )
+    ]
+
+    lines = terminal._render_forest(trees)
+
+    assert lines[1].startswith("      ├── Ui")
+    assert lines[2].startswith("      │   └── Deep")
+    assert lines[3].startswith("      └── Core")
+
+
 def test_eof_at_the_first_prompt_aborts(forest_home, fake_claude_on_path, monkeypatch):
     run = _make_run(forest_home, "install")
     preflight.find_claude(run)

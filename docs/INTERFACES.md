@@ -60,6 +60,7 @@ def encode_project_dir(path: Path) -> List[str]      # candidate ~/.claude/proje
 ```python
 walk.find_projects(root: Path, skip: Set[str], on_progress: Callable[[int], None], max_depth: int = 6,
                    max_dirs: int = 200_000) -> Tuple[List[Path], List[Path]]   # (claude_md paths, skipped roots)
+# max_depth bounds the search for HEADS only; inside a tree already found the walk is unbounded.
 forest.build(claude_mds: List[Path]) -> List[Tree]   # top-level trees with nested subtrees
 forest.apply_selection(trees: List[Tree], selected: Set[str]) -> int   # str paths; subtrees inherit; returns count
 sessions.annotate(trees: List[Tree], claude_dir: Path) -> None     # sets has_session/last_session
@@ -116,7 +117,7 @@ loader.names() -> List[str]
 launch.open_ui(run: Run) -> int        # starts server, opens browser, blocks until quit; returns exit code
 launch.can_open_browser() -> bool
 server.make_server(run: Run) -> ThreadingHTTPServer     # bound 127.0.0.1:0
-server.render_page(token: str) -> str
+server.render_page(token: str) -> str   # inlines wizard.css, wizard.js, wizard2.js, icons.svg
 api.state(run) -> dict; api.scan_start(run) -> dict; api.scan_progress(run) -> dict
 api.set_selection(run, selected: List[str]) -> dict
 api.heads_start(run) -> dict; api.heads_progress(run) -> dict

@@ -1,7 +1,7 @@
 """Drive the bundled installer end to end against a staging HOME built by `build_home.py`, using
-only the fake `claude` in `fixtures/claude_fake`. Six steps run in order (build, dry run, install,
-status, re-install, uninstall); each prints PASS or FAIL with a one-line reason. `pytest
-tests/staging` imports this module and calls the same step functions.
+only the fake `claude` in `fixtures/claude_fake`. Seven steps run in order (build, dry run,
+install, status, re-install, uninstall, tree shape); each prints PASS or FAIL with a one-line
+reason. `pytest tests/staging` imports this module and calls the same step functions.
 
 Usage: `python3 staging/e2e.py --home DIR [--keep]`. Exit codes: 0 every step passed, 1 otherwise.
 """
@@ -39,17 +39,17 @@ ACCOUNT_FILES = (
 LEGACY_TAIL = "## Notes added after that block"
 
 
-def _load_build_home():
-    spec = importlib.util.spec_from_file_location("staging_build_home", STAGING_DIR / "build_home.py")
+def _load_sibling(name: str):
+    spec = importlib.util.spec_from_file_location(f"staging_{name}", STAGING_DIR / f"{name}.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-build_home = _load_build_home()
+build_home = _load_sibling("build_home")
+tree_shape = _load_sibling("tree_shape")
 EXPECTED_PROJECTS = build_home.EXPECTED_PROJECTS
-POINTER_BEGIN = build_home.POINTER_BEGIN
-POINTER_END = build_home.POINTER_END
+POINTER_BEGIN, POINTER_END = build_home.POINTER_BEGIN, build_home.POINTER_END
 
 
 def account_pointer_line() -> str:
@@ -200,7 +200,7 @@ def step3_install(installer: Path, home: Path) -> tuple[bool, str]:
     problems = [reason for check in checks for ok, reason in [check(home)] if not ok]
     if problems:
         return False, f"{len(problems)} problem(s): " + "; ".join(problems)
-    return True, "six account files, 11 blocks, settings.json untouched, registry all self"
+    return True, f"{len(EXPECTED_PROJECTS) - 1} blocks, settings.json kept, registry all self"
 
 
 def _check_account_files(home: Path) -> tuple[bool, str]:
@@ -283,12 +283,13 @@ def _check_manifest(home: Path) -> tuple[bool, str]:
     if not expected_created <= created:
         return False, f"manifest is missing created_file entries: {sorted(expected_created - created)}"
     blocks = [entry for entry in entries if entry["kind"] == "inserted_block"]
-    if len(blocks) != len(EXPECTED_PROJECTS) - 1:
-        return False, f"manifest records {len(blocks)} inserted blocks, expected 11"
+    wanted = len(EXPECTED_PROJECTS) - 1  # every project but `code/legacy`, which has one already
+    if len(blocks) != wanted:
+        return False, f"manifest records {len(blocks)} inserted blocks, expected {wanted}"
     if not any(entry["kind"] == "backup" for entry in entries):
         return False, "manifest has no backup entry for the account CLAUDE.md"
     if len(manifest.get("heads", [])) != len(EXPECTED_PROJECTS):
-        return False, f"manifest records {len(manifest.get('heads', []))} heads, expected 12"
+        return False, f"manifest heads: {len(manifest.get('heads', []))} of {len(EXPECTED_PROJECTS)}"
     return True, ""
 
 
@@ -334,16 +335,17 @@ def step6_uninstall(installer: Path, home: Path, before: dict) -> tuple[bool, st
 
 
 def run_all(home: Path, installer: Path) -> list:
-    """Run all six steps in order and return `[(name, ok, reason)]`."""
+    """Run all seven steps in order and return `[(name, ok, reason)]`."""
     results = []
     ok, reason, before = step1_build(home)
     results.append(("1 build staging HOME", ok, reason))
     steps = (
-        ("2 dry run discovers 12", lambda: step2_dry_run(installer, home, before)),
+        ("2 dry run discovers every tree", lambda: step2_dry_run(installer, home, before)),
         ("3 install writes the plan", lambda: step3_install(installer, home)),
         ("4 --status lists every row", lambda: step4_status(installer, home)),
         ("5 re-install is idempotent", lambda: step5_idempotence(installer, home)),
         ("6 --uninstall restores all", lambda: step6_uninstall(installer, home, before)),
+        ("7 trees nest to any depth", lambda: tree_shape.step7_tree_shape(installer, home)),
     )
     for name, call in steps:
         step_ok, step_reason = call()

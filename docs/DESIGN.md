@@ -20,7 +20,8 @@ six-laws-kit/
     discover/  ARCHITECTURE.md walk.py forest.py sessions.py
     heads/     ARCHITECTURE.md preflight.py packet.py ask.py fallback.py
     wizard/    ARCHITECTURE.md server.py api.py launch.py terminal.py
-               assets/ARCHITECTURE.md assets/index.html assets/wizard.css assets/wizard.js assets/icons.svg
+               assets/ARCHITECTURE.md assets/index.html assets/wizard.css
+               assets/wizard.js (controller) assets/wizard2.js (DOM builders) assets/icons.svg
     write/     ARCHITECTURE.md plan.py apply.py blocks.py registry.py
     manifest/  ARCHITECTURE.md record.py uninstall.py status.py
     texts/     ARCHITECTURE.md loader.py SIX_LAWS.md INTERPROJECT_PROTOCOL.md PRIOR_ART.md
@@ -62,8 +63,10 @@ Server: `http.server.ThreadingHTTPServer` on `127.0.0.1`, port 0. A per-run toke
 (`secrets.token_hex(16)`) is in the opened URL (`/?t=`), embedded in the page as one JS const, and
 required as header `X-Kit-Token` on every `/api/*` call. Requests with a non-loopback `Host` or a
 foreign `Origin` are refused with 403. There are no asset sub-requests: `server.render_page()` reads
-`assets/index.html` and substitutes `<!--@css-->`, `<!--@js-->`, `<!--@icons-->` with the sibling files
-at request time — one HTML response, works offline. Progress is plain polling (scan 400 ms, heads
+`assets/index.html` and substitutes `<!--@css-->`, `<!--@js-->`, `<!--@js2-->`, `<!--@icons-->` with
+the sibling files at request time — one HTML response, works offline. The JS is two files only
+because of the 400-line cap: `wizard.js` is the controller, `wizard2.js` the DOM builders, and they
+share one global scope in document order. Progress is plain polling (scan 400 ms, heads
 700 ms, install 300 ms) of a lock-guarded dict. Shutdown: `POST /api/quit` answers 200, then
 `threading.Timer(0.3, httpd.shutdown)`; the page also sends `navigator.sendBeacon('/api/quit')` on
 `pagehide`; a watchdog shuts the server after 15 minutes idle; Ctrl-C always wins. The endpoint
@@ -107,8 +110,13 @@ code and design notes live on branch `routing-module`.
 Paths are written with `Path.as_posix()` and double-quoted. `claude` is found with `shutil.which`
 (so it matches `claude.cmd`); a subprocess is always a list, never `shell=True`. Skip lists: POSIX
 `.git node_modules venv .venv __pycache__ .cache .npm .cargo Library .Trash Pictures Movies Music`; Windows adds `AppData
-OneDrive $Recycle.Bin`; symlinks and reparse points skipped; depth cap 6; hard cap 200,000 directories
-with a live counter; the Scan step names every root it skipped. Session-dir encoding is lossy
+OneDrive $Recycle.Bin`; symlinks and reparse points skipped; hard cap 200,000 directories
+with a live counter; the Scan step names every root it skipped. **The depth cap of 6 bounds the
+search for heads, not the walk**: a head must lie within 6 levels of the scan root to be found, but
+once one is found its tree is walked to any depth, so a subtree nine or more levels down is
+discovered with it. The skip list and the directory cap still apply inside a found tree, so a
+project's own `node_modules`, `.venv` or `.claude/worktrees` are skipped however deep it goes.
+Session-dir encoding is lossy
 (`/`, `.`, `_` → `-`): always encode forward from the real path and match against the listing, never
 decode. `.md` written with `newline="\n"`; block-strip tolerates CRLF. On Linux without
 `DISPLAY`/`WAYLAND_DISPLAY`, or under WSL, go straight to the terminal UI; the URL is always printed.

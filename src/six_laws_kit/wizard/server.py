@@ -1,6 +1,7 @@
 """The wizard's loopback HTTP server: one page and twelve JSON endpoints on `127.0.0.1`, a random
-port, and a per-run token that every request must carry. `render_page` inlines the CSS, JS and
-icons into `assets/index.html` so the page needs no follow-up request and works offline.
+port, and a per-run token that every request must carry. `render_page` inlines the CSS, both JS
+files and the icons into `assets/index.html` so the page needs no follow-up request and works
+offline.
 
 Nothing here is logged to stdout; set `KIT_DEBUG` to get one request line per call on stderr.
 """
@@ -25,7 +26,12 @@ IDLE_CHECK_SECONDS = 15
 SHUTDOWN_DELAY_SECONDS = 0.3
 MAX_BODY_BYTES = 1 << 20
 
-_ASSET_SLOTS = (("<!--@css-->", "wizard.css"), ("<!--@js-->", "wizard.js"), ("<!--@icons-->", "icons.svg"))
+_ASSET_SLOTS = (
+    ("<!--@css-->", "wizard.css"),
+    ("<!--@js-->", "wizard.js"),
+    ("<!--@js2-->", "wizard2.js"),
+    ("<!--@icons-->", "icons.svg"),
+)
 _TOKEN_SLOT = "%%TOKEN%%"
 
 _ROUTES = {

@@ -29,20 +29,24 @@
     <!-- WELCOME -->
     <section data-step="welcome" aria-labelledby="welcome-h">
       <h2 id="welcome-h">Before you start</h2>
-      <p>This installer looks at the Claude Code projects on this computer, asks each one you choose
-        a single question about itself, and then writes a small set of shared files so every project
-        can find and recognize the others. Nothing is written until you confirm the exact changes on
-        the Review step.</p>
+      <p>This installer looks at the Claude Code projects on this computer and reads them as a
+        forest: each top-level project is a tree, entered through its head, with any nested
+        projects as its subtrees. It asks each tree you choose a single question about itself, and
+        then writes a small set of shared files so every tree can find and recognize the others.
+        Nothing is written until you confirm the exact changes on the Review step.</p>
       <p class="cost-note">Cost note: one short Claude call per chosen project, on your account.</p>
       <button type="button" class="btn btn-primary" id="btn-start">Start</button>
     </section>
 
     <!-- SCAN -->
     <section data-step="scan" hidden aria-labelledby="scan-h">
-      <h2 id="scan-h">Scanning for projects</h2>
+      <h2 id="scan-h">Your forest</h2>
       <p id="scan-counter" aria-live="polite">Looking for Claude Code projects&hellip;</p>
       <div id="scan-results" hidden>
-        <ul class="tree" id="tree-root"></ul>
+        <p class="forest-lead" id="forest-lead"></p>
+        <p class="forest-lead">Each card below is one tree. You enter a tree through its head, so
+          choosing a head chooses the whole tree: every subtree under it comes with it.</p>
+        <div class="forest" id="tree-root"></div>
         <details class="skipped" id="skipped-wrap" hidden>
           <summary>Skipped locations</summary>
           <ul id="skipped-list"></ul>
@@ -56,11 +60,11 @@
     <!-- HEADS -->
     <section data-step="heads" hidden aria-labelledby="heads-h">
       <h2 id="heads-h">Registering heads</h2>
-      <p>Each chosen project is asked, once, what it owns and what it watches for. This can take a
-        moment per project.</p>
+      <p>Each chosen tree is asked, once, what it owns and what it watches for. The head answers
+        first, then each subtree under it. This can take a moment per project.</p>
       <table class="heads-table" id="heads-table">
         <thead>
-          <tr><th scope="col">Project</th><th scope="col">Status</th><th scope="col">Elapsed</th></tr>
+          <tr><th scope="col">Tree</th><th scope="col">Status</th><th scope="col">Elapsed</th></tr>
         </thead>
         <tbody id="heads-tbody" aria-live="polite"></tbody>
       </table>
@@ -72,9 +76,10 @@
     <!-- REVIEW -->
     <section data-step="review" hidden aria-labelledby="review-h">
       <h2 id="review-h">Review the changes</h2>
-      <p>Nothing has been written yet. Expand any action to see its exact diff.</p>
+      <p>Nothing has been written yet. The changes are grouped by tree, in the same order as the
+        Scan step. Expand any action to see its exact diff.</p>
       <ul class="warnings" id="review-warnings" hidden></ul>
-      <ul class="actions" id="review-actions"></ul>
+      <div class="review-groups" id="review-actions"></div>
       <div class="step-actions">
         <button type="button" class="btn btn-primary" id="btn-confirm">Confirm</button>
       </div>
@@ -119,6 +124,9 @@
 
 <script>
 <!--@js-->
+</script>
+<script>
+<!--@js2-->
 </script>
 </body>
 </html>
