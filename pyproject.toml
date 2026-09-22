@@ -1,0 +1,20 @@
+[project]
+name = "six-laws-kit"
+version = "0.1.0"
+description = "Installer for the six-law setup for Claude Code projects run as a system."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Niv Dvir" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "pre-commit"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
