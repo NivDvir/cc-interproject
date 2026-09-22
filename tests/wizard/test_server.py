@@ -68,9 +68,12 @@ def test_page_inlines_assets_and_token(running):
     assert f'window.KIT_TOKEN = "{run.token}"' in body
     assert "<!--@css-->" not in body
     assert "<!--@js-->" not in body
+    assert "<!--@js2-->" not in body
     assert "<!--@icons-->" not in body
     assert ".badge-waiting" in body
     assert "icon-welcome" in body
+    assert "function renderForest(" in body
+    assert "function subtreeList(" in body
 
 
 def test_api_needs_the_token_header(running):
@@ -119,4 +122,6 @@ def test_render_page_substitutes_every_slot():
     page = server.render_page("abc123")
     assert 'window.KIT_TOKEN = "abc123"' in page
     assert "%%TOKEN%%" not in page
-    assert "<!--@css-->" not in page
+    for slot, _name in server._ASSET_SLOTS:
+        assert slot not in page, f"{slot} was left unsubstituted"
+    assert page.index("function renderForest(") > page.index("function kitFetch(")

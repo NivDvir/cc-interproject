@@ -22,20 +22,27 @@ def find_projects(
 ) -> tuple[list[Path], list[Path]]:
     """Return `(claude_md_paths, skipped_roots)` found scanning below `root`.
 
-    `skip` names are never entered, at any depth — including inside a directory that itself
-    holds a `CLAUDE.md`, so a discovered project's own vendored or virtual-env directories are still
-    skipped. `skipped_roots` only records the ones actually encountered at depth <= 2, so the
-    caller can name a few without flooding the UI with every vendored directory buried deep in a
-    tree. A symlink (or, on Windows, a reparse point) is never descended into, which is also what
-    keeps a symlink loop from hanging the walk. `on_progress` fires every 200 directories and
-    once more, unconditionally, when the walk finishes, so the final call always carries the
-    exact total even when it is not a multiple of 200 (or is 0).
+    `max_depth` bounds the SEARCH FOR HEADS, not the walk. A directory deeper than `max_depth`
+    below `root` is only entered when the walk is already inside a tree — that is, when some
+    directory on the way down held a `CLAUDE.md` of its own. So a head is discoverable only
+    within `max_depth` of the scan root, but once one is found its own tree is walked to any
+    depth and every subtree in it is found, however deeply nested. That is what the article
+    means by a tree: the unit is entered through its head, and it has no depth limit of its own.
+
+    `skip` names are never entered, at any depth — including inside a tree, so a discovered
+    project's own vendored, virtual-env or `.claude/worktrees` directories are still skipped.
+    `skipped_roots` only records the ones actually encountered at depth <= 2, so the caller can
+    name a few without flooding the UI with every vendored directory buried deep in a tree. A
+    symlink (or, on Windows, a reparse point) is never descended into, which is also what keeps a
+    symlink loop from hanging the walk. `on_progress` fires every 200 directories and once more,
+    unconditionally, when the walk finishes, so the final call always carries the exact total
+    even when it is not a multiple of 200 (or is 0).
     """
     claude_mds: list[Path] = []
     skipped_roots: list[Path] = []
     dirs_seen = 0
 
-    def visit(directory: Path, depth: int) -> None:
+    def visit(directory: Path, depth: int, in_tree: bool) -> None:
         nonlocal dirs_seen
         if dirs_seen >= max_dirs:
             return
@@ -46,18 +53,22 @@ def find_projects(
             entries = list(os.scandir(directory))
         except OSError:
             return
+        is_head = False
         for entry in entries:
             if entry.name == _CLAUDE_MD and entry.is_file(follow_symlinks=False):
                 claude_mds.append(Path(entry.path))
-        if depth < max_depth:
-            _visit_subdirs(entries, depth, skip, skipped_roots, visit)
+                is_head = True
+        inside = in_tree or is_head
+        if inside or depth < max_depth:
+            _visit_subdirs(entries, depth, inside, skip, skipped_roots, visit)
 
     def _visit_subdirs(
         entries: list[os.DirEntry],
         depth: int,
+        inside: bool,
         skip: set[str],
         skipped_roots: list[Path],
-        visit_fn: Callable[[Path, int], None],
+        visit_fn: Callable[[Path, int, bool], None],
     ) -> None:
         for entry in entries:
             if not entry.is_dir(follow_symlinks=False):
@@ -66,8 +77,8 @@ def find_projects(
                 if depth + 1 <= _SKIPPED_ROOT_DEPTH_CAP:
                     skipped_roots.append(Path(entry.path))
                 continue
-            visit_fn(Path(entry.path), depth + 1)
+            visit_fn(Path(entry.path), depth + 1, inside)
 
-    visit(root, 0)
+    visit(root, 0, False)
     on_progress(dirs_seen)
     return claude_mds, skipped_roots

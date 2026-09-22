@@ -1,5 +1,5 @@
-"""Tests for discover/walk.py: skip-list enforcement, project discovery, the depth cap, and
-symlink safety.
+"""Tests for discover/walk.py: skip-list enforcement, project discovery, the head-search depth
+cap (and the unbounded walk inside a tree it has found), and symlink safety.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ def test_walk_skips_vendored_and_housekeeping_dirs(forest_home):
     assert {"node_modules", ".venv", ".Trash"} <= skipped_names
 
 
-def test_walk_respects_depth_cap(tmp_path):
+def test_walk_respects_the_head_search_depth_cap(tmp_path):
     current = tmp_path
     for level in range(5):
         current = current / f"level{level}"
@@ -46,6 +46,60 @@ def test_walk_respects_depth_cap(tmp_path):
     claude_mds, _ = walk.find_projects(tmp_path, set(), on_progress=lambda _n: None, max_depth=2)
 
     assert claude_mds == []
+
+
+def test_walk_follows_a_found_tree_below_the_head_search_cap(tmp_path):
+    """The cap bounds the search for heads only: a head inside it carries its whole tree."""
+    head = tmp_path / "code" / "platform"
+    head.mkdir(parents=True)
+    (head / "CLAUDE.md").write_text("# Platform\n", encoding="utf-8")
+    deep = head
+    for level in range(7):
+        deep = deep / f"level{level}"
+        deep.mkdir()
+    (deep / "CLAUDE.md").write_text("# Ledger\n", encoding="utf-8")
+
+    claude_mds, _ = walk.find_projects(tmp_path, set(), on_progress=lambda _n: None, max_depth=6)
+
+    found = {p.parent for p in claude_mds}
+    assert head in found
+    assert deep in found
+    assert len(deep.relative_to(tmp_path).parts) == 9
+
+
+def test_walk_does_not_find_a_head_beyond_the_head_search_cap(tmp_path):
+    """Documented behaviour: a `CLAUDE.md` deeper than `max_depth`, with no head above it on the
+    way down, is never reached — nothing marked that branch as a tree.
+    """
+    deep = tmp_path
+    for level in range(8):
+        deep = deep / f"level{level}"
+        deep.mkdir()
+    (deep / "CLAUDE.md").write_text("# Too deep\n", encoding="utf-8")
+
+    claude_mds, _ = walk.find_projects(tmp_path, set(), on_progress=lambda _n: None, max_depth=6)
+
+    assert claude_mds == []
+
+
+def test_walk_still_skips_worktrees_deep_inside_a_found_tree(tmp_path):
+    """Unbounded depth inside a tree does not weaken the skip list."""
+    head = tmp_path / "project"
+    head.mkdir()
+    (head / "CLAUDE.md").write_text("# Project\n", encoding="utf-8")
+    worktree = head / "a" / "b" / "c" / "d" / "e" / ".claude" / "worktrees" / "w"
+    worktree.mkdir(parents=True)
+    (worktree / "CLAUDE.md").write_text("# Worktree Copy\n", encoding="utf-8")
+    real_subtree = head / "a" / "b" / "c" / "d" / "e" / "f" / "service"
+    real_subtree.mkdir(parents=True)
+    (real_subtree / "CLAUDE.md").write_text("# Service\n", encoding="utf-8")
+
+    claude_mds, _ = walk.find_projects(tmp_path, paths.skip_names(), on_progress=lambda _n: None)
+
+    found = {p.parent for p in claude_mds}
+    assert head in found
+    assert real_subtree in found
+    assert worktree not in found
 
 
 def test_walk_symlink_loop_does_not_hang(tmp_path):

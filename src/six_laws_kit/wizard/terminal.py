@@ -2,7 +2,11 @@
 Scan, Heads, Review, Install, Done), driven on stdin/stdout instead of HTTP. Talks to the
 running install only through `wizard.api`, the same surface the HTTP layer calls, and renders the
 Review step's diffs itself from `api.plan`'s plain-dict actions — the same way `wizard/assets/
-wizard.js` renders them for the browser, so no cross-category import is needed here.
+wizard2.js` renders them for the browser, so no cross-category import is needed here.
+
+The Scan step shows the same structure the browser cards show: one block per tree, its head on a
+numbered line and its subtrees below it as an ASCII tree of any depth. Selection is still by head
+number or "all", because a tree is chosen through its head.
 """
 
 from __future__ import annotations
@@ -27,6 +31,10 @@ EXIT_OK = 0
 EXIT_INSTALL_ERROR = 5
 EXIT_ABORTED = 6
 RULER = "=" * 60
+TEE = "├──"
+TEE_LAST = "└──"
+PIPE = "│   "
+BLANK = "    "
 
 
 def run(run: Run) -> int:
@@ -63,7 +71,10 @@ def _step_scan(run: Run) -> dict:
     _poll_dots(lambda: api.scan_progress(run))
     state = api.state(run)
     trees = state.get("trees") or []
-    print(f"Found {len(trees)} project(s):")
+    subtrees = sum(_count_subtrees(tree) for tree in trees)
+    print(f"Found {len(trees)} tree(s) in your forest, holding {subtrees} subtree(s) between them.")
+    print("Choosing a head chooses its whole tree; the subtrees under it are inherited.")
+    print()
     for line in _render_forest(trees):
         print(line)
     return state
@@ -80,31 +91,49 @@ def _poll_dots(fetch) -> dict:
 
 
 def _render_forest(trees: list[dict]) -> list[str]:
+    """One block per tree: the numbered head, then its subtrees as an ASCII tree of any depth."""
     lines: list[str] = []
     for index, tree in enumerate(trees, start=1):
-        lines.append(f"  [{index}] {_tree_label(tree)}")
-        lines.extend(_render_subtrees(tree.get("subtrees") or [], indent=6))
+        lines.append(f"  [{index}] {_head_label(tree)}")
+        lines.extend(_render_subtrees(tree.get("subtrees") or [], prefix=" " * 6))
+        lines.append("")
     return lines
 
 
-def _render_subtrees(subtrees: list[dict], indent: int) -> list[str]:
+def _render_subtrees(subtrees: list[dict], prefix: str) -> list[str]:
     lines: list[str] = []
-    pad = " " * indent
-    for subtree in subtrees:
-        lines.append(f"{pad}{_tree_label(subtree)}")
-        lines.extend(_render_subtrees(subtree.get("subtrees") or [], indent + 2))
+    last_index = len(subtrees) - 1
+    for index, subtree in enumerate(subtrees):
+        is_last = index == last_index
+        lines.append(f"{prefix}{TEE_LAST if is_last else TEE} {_subtree_label(subtree)}")
+        child_prefix = prefix + (BLANK if is_last else PIPE)
+        lines.extend(_render_subtrees(subtree.get("subtrees") or [], child_prefix))
     return lines
 
 
-def _tree_label(tree: dict) -> str:
-    name = tree.get("name", "?")
+def _head_label(tree: dict) -> str:
+    count = _count_subtrees(tree)
+    subtrees = f"{count} subtree" + ("" if count == 1 else "s") if count else "no subtrees"
+    return f"{tree.get('name', '?')}  ({tree.get('path', '?')}, {_session_text(tree)}, {subtrees})"
+
+
+def _subtree_label(tree: dict) -> str:
+    return f"{tree.get('name', '?')}  ({tree.get('path', '?')}, {_session_text(tree)})"
+
+
+def _session_text(tree: dict) -> str:
     if tree.get("has_session"):
-        return f"{name} (last session {tree.get('last_session')})"
-    return f"{name} (no prior session)"
+        return f"last session {tree.get('last_session')}"
+    return "no prior session"
+
+
+def _count_subtrees(tree: dict) -> int:
+    subtrees = tree.get("subtrees") or []
+    return len(subtrees) + sum(_count_subtrees(subtree) for subtree in subtrees)
 
 
 def _step_selection(run: Run, trees: list[dict]) -> None:
-    line = _read_line('Select projects to include (numbers, e.g. "1 3", or "all"): ')
+    line = _read_line('Select trees by head number (e.g. "1 3"), or "all": ')
     selected = _parse_selection(line, trees)
     api.set_selection(run, selected)
 

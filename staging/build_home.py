@@ -43,13 +43,29 @@ EXPECTED_PROJECTS = (
     "code/legacy",
     "code/archive/old-app.backup-2025-01-01",
     "code/swift-tool",
+    "code/platform",
+    "code/platform/services",
+    "code/platform/services/billing",
+    "code/platform/services/billing/ledger",
 )
 
-# CLAUDE.md files that exist but must never be discovered.
+# The `code/platform` tree, head first: a head, a child, a grandchild and a great-grandchild, so
+# the wizard and the terminal UI have three levels of nesting to render under one head.
+PLATFORM_TREE = (
+    ("code/platform", "platform_root.md"),
+    ("code/platform/services", "platform_services.md"),
+    ("code/platform/services/billing", "platform_billing.md"),
+    ("code/platform/services/billing/ledger", "platform_ledger.md"),
+)
+
+# CLAUDE.md files that exist but must never be discovered. `code/deep/a/.../project` is a head
+# nine levels down with no head above it on the way, so the head search (depth cap 6 from the
+# scan root) never reaches it; see docs/DESIGN.md section 7.
 DECOY_PROJECTS = (
     "code/webapp/node_modules/@scope/design-tokens",
     "code/api/.venv/lib/python3.12/site-packages/x",
     "code/monorepo/packages/core/.claude/worktrees/feat-x",
+    "code/platform/services/billing/ledger/.claude/worktrees/feat-y",
     "code/swift-tool/.build/checkouts/dep",
     "code/deep/a/b/c/d/e/f/g/project",
 )
@@ -155,6 +171,10 @@ def _projects(home: Path) -> None:
     write_text(home / "code/archive/old-app.backup-2025-01-01/CLAUDE.md", template("archive_claude.md"))
     write_text(home / "code/swift-tool/CLAUDE.md", template("swift_tool_claude.md"))
     write_text(home / "code/swift-tool/Package.swift", "// swift-tools-version:5.9\n")
+
+    for relative, name in PLATFORM_TREE:
+        write_text(home / relative / "CLAUDE.md", template(name))
+    write_text(home / "code/platform/services/billing/ledger/schema.sql", "CREATE TABLE entry ();\n")
 
     os.symlink("webapp", home / "code/link-to-webapp", target_is_directory=True)
 

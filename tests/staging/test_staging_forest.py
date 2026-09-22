@@ -1,4 +1,4 @@
-"""Run the six staging steps from `staging/e2e.py` once, into a pytest temporary directory, and
+"""Run the seven staging steps from `staging/e2e.py` once, into a pytest temporary directory, and
 assert on each one separately so a failure names the step that broke. Offline: the only `claude`
 on PATH is `fixtures/claude_fake`.
 """
@@ -29,17 +29,18 @@ build_home = _load("build_home")
 
 STEP_NAMES = (
     "1 build staging HOME",
-    "2 dry run discovers 12",
+    "2 dry run discovers every tree",
     "3 install writes the plan",
     "4 --status lists every row",
     "5 re-install is idempotent",
     "6 --uninstall restores all",
+    "7 trees nest to any depth",
 )
 
 
 @pytest.fixture(scope="module")
 def staging_run(tmp_path_factory: pytest.TempPathFactory) -> dict:
-    """Build a staging HOME and run all six steps once; return `{step name: (ok, reason)}`."""
+    """Build a staging HOME and run all seven steps once; return `{step name: (ok, reason)}`."""
     home = tmp_path_factory.mktemp("staging") / "home"
     temp_dirs: list = []
     installer, _note = e2e.installer_path(temp_dirs)
