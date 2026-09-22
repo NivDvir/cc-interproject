@@ -20,6 +20,33 @@ itself, the installer never writes an opinion in its place unless the project ca
   `name`, the first paragraph after it, cut to 40 words, for `owns`, `NOT STATED` for the rest.
   Every row this module produces has `written_by="installer"`; it never claims `"self"`.
 
+## Windows: the `.cmd` shim
+
+A real, npm-installed `claude` resolves on Windows to `claude.cmd`, a batch file. `CreateProcess`
+cannot start a batch file directly (no PE header) — it must go through `cmd.exe`. `paths.is_windows_shim`
+detects this (via `shutil.which`, which already does the PATHEXT-aware resolution) and
+`paths.windows_shim_argv` rewrites the argv to `[COMSPEC or cmd.exe, "/d", "/c", <resolved path>, *rest]`;
+`ask_one`, `probe_capabilities`, and `auth_ping` all route their `subprocess.run` argv through it.
+
+Two options were considered for finding the real interpreter behind the shim:
+
+- **Parse the `.cmd` to find the underlying `node`/script call it makes**, then invoke that directly.
+  Rejected: npm's shim format is undocumented and has changed across npm versions, the target
+  script's own argv handling would still need reproducing, and the kit's own `claude_fake` fixture
+  does not even use node — a parser tuned to one shim shape would not generalise.
+- **Run the shim itself through `cmd.exe /d /c`** (chosen). `cmd.exe` is a real executable, so
+  `CreateProcess` starts it fine, and it knows how to run a batch file. `/d` skips
+  `AutoRun` registry commands (no surprise output mixed into the head's JSON envelope); `/c` runs
+  the given command and exits. This works for any shim, whatever it launches underneath.
+
+The one caveat: `cmd.exe /c` re-parses its command line with its own quoting rules, which mishandle
+an argument that itself contains multiple quoted segments — exactly the shape of `--json-schema`'s
+JSON value once it also needs its own quotes. Rather than rely on `subprocess.list2cmdline`'s
+argv-quoting surviving a second, different quoting pass, `ask_one` drops `--json-schema` whenever it
+is about to route through the shim and leans on `parse_row`'s fenced/balanced-brace fallback tiers
+instead. `probe_capabilities` still reports whether the CLI supports the flag (for the manifest);
+only sending it is skipped.
+
 ## Contract
 
 A row is `written_by="self"` iff the head's own answer supplied a non-empty `name` and `owns`;

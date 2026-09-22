@@ -122,6 +122,10 @@ Settings merge (`write/settings.py`): skip if any entry anywhere already has the
 else append to the group with an equal matcher, else a new group; preserve key order; atomic
 `os.replace` after backup. `same_purpose_hooks(run)` detects existing hooks whose command basename
 contains `packet-wrap`, `labor-tally`, `load-cap` (the owner's own bash hooks) or the kit's names.
+Each hook derives its state directory from home: an explicit `HOME` env var wins when set, else
+`Path.home()`. This matters only on Windows, where `Path.home()` reads `USERPROFILE` and ignores
+`HOME` — a caller (this repo's own tests included) that sandboxes the hook by setting only `HOME`
+would otherwise land outside the sandbox there.
 
 ## 7. Windows and Linux
 

@@ -11,6 +11,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from six_laws_kit import paths
 from six_laws_kit.heads import fallback, packet
 from six_laws_kit.run_state import Row, Run, Tree, selected_trees
 
@@ -108,8 +109,15 @@ def _row_from_fields(fields: dict[str, object] | None, tree: Tree, elapsed: floa
 
 
 def ask_one(claude_bin: str, tree: Tree, json_schema: bool, timeout: int) -> Row:
-    """Blocking: run one head call for `tree` and return its Row (real or fallback)."""
-    command = packet.build_command(claude_bin, json_schema)
+    """Blocking: run one head call for `tree` and return its Row (real or fallback).
+
+    On Windows, a real `claude` resolves to a `.cmd` shim, which must run through `cmd.exe`
+    (`paths.windows_shim_argv`). The `--json-schema` value is a JSON blob `cmd.exe` would have to
+    re-parse on its way to the shim, so this drops it in that one case and lets `parse_row`'s
+    fallback tiers do the work instead — see `heads/ARCHITECTURE.md`.
+    """
+    schema_arg = json_schema and not paths.is_windows_shim(claude_bin)
+    command = paths.windows_shim_argv(packet.build_command(claude_bin, schema_arg))
     started = time.time()
     try:
         proc = subprocess.run(

@@ -5,6 +5,7 @@ helpers that build a hook's registered command.
 
 from __future__ import annotations
 
+import os
 import pkgutil
 import re
 import shutil
@@ -125,3 +126,28 @@ def hook_interpreter() -> list[str]:
 def hook_command(interpreter: list[str], script: Path) -> str:
     """Render the `settings.json` hook command string for `script`, quoted as a POSIX path."""
     return " ".join([*interpreter, f'"{script.as_posix()}"'])
+
+
+def is_windows_shim(claude_bin: str) -> bool:
+    """True when `claude_bin` resolves to a `.cmd`/`.bat` file — the normal shape of a real,
+    npm-installed `claude` on Windows. `CreateProcess` cannot start such a file directly (no PE
+    header): only `cmd.exe` knows how to run it. Always false off Windows.
+    """
+    if not sys.platform.startswith("win"):
+        return False
+    resolved = shutil.which(claude_bin) or claude_bin
+    return resolved.lower().endswith((".cmd", ".bat"))
+
+
+def windows_shim_argv(command: list[str]) -> list[str]:
+    """Rewrite `command` so a `.cmd`/`.bat` shim runs through the command interpreter instead of
+    being handed to `CreateProcess` directly, which fails with `OSError` (`WinError 193`). A
+    no-op everywhere except Windows, and even there a no-op unless `command[0]` resolves to a
+    batch file. See `heads/ARCHITECTURE.md` for why this wraps the resolved binary in
+    `cmd.exe /d /c` rather than parsing the shim to find the real interpreter underneath it.
+    """
+    if not is_windows_shim(command[0]):
+        return command
+    resolved = shutil.which(command[0]) or command[0]
+    comspec = os.environ.get("COMSPEC", "cmd.exe")
+    return [comspec, "/d", "/c", resolved, *command[1:]]

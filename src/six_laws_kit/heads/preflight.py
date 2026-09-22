@@ -7,6 +7,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 
+from six_laws_kit import paths
 from six_laws_kit.heads.ask import is_auth_failure_text
 from six_laws_kit.run_state import Run
 
@@ -30,7 +31,8 @@ def probe_capabilities(run: Run) -> dict[str, bool]:
     caps = {"json_schema": False}
     if run.claude_bin:
         try:
-            proc = subprocess.run([run.claude_bin, "--help"], capture_output=True, text=True, timeout=30)
+            command = paths.windows_shim_argv([run.claude_bin, "--help"])
+            proc = subprocess.run(command, capture_output=True, text=True, timeout=30)
             output = (proc.stdout or "") + (proc.stderr or "")
             caps["json_schema"] = "--json-schema" in output
         except (subprocess.TimeoutExpired, OSError):
@@ -45,8 +47,9 @@ def auth_ping(run: Run, timeout: int = 60) -> bool:
         run.auth_ok = False
         return False
     try:
+        argv = [run.claude_bin, "-p", "--output-format", "json", "--max-turns", "1"]
         proc = subprocess.run(
-            [run.claude_bin, "-p", "--output-format", "json", "--max-turns", "1"],
+            paths.windows_shim_argv(argv),
             cwd=run.home,
             input=AUTH_PING_PROMPT,
             capture_output=True,
