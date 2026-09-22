@@ -6,10 +6,13 @@ build-time script outside the `cc_interproject` package, so it is loaded here by
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import os
+import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -98,3 +101,28 @@ def test_build_is_reproducible(tmp_path):
     second = bundle.build(tmp_path / "two")
     assert first.read_bytes() == second.read_bytes()
     assert (tmp_path / "one" / "SHA256SUMS").read_text() == (tmp_path / "two" / "SHA256SUMS").read_text()
+
+
+def test_empty_source_directory_does_not_change_archive_hash(tmp_path, monkeypatch):
+    """A directory kept alive only by an ignored entry (a stray `__pycache__` under a package that
+    was otherwise `git rm -r`'d) must not turn into an empty archive member: an empty directory has
+    no file behind it, so letting it in would make the hash depend on directory survival rather
+    than on source content, exactly the CI-only failure this regression guards against.
+    """
+    source_copy = tmp_path / "cc_interproject"
+    shutil.copytree(bundle.SOURCE_PACKAGE, source_copy)
+    monkeypatch.setattr(bundle, "SOURCE_PACKAGE", source_copy)
+
+    baseline = bundle.build(tmp_path / "baseline")
+    baseline_sha256 = hashlib.sha256(baseline.read_bytes()).hexdigest()
+
+    empty_pycache = source_copy / "hooks" / "__pycache__"
+    empty_pycache.mkdir(parents=True)
+    (empty_pycache / "stray.pyc").write_bytes(b"")
+
+    with_stray_dir = bundle.build(tmp_path / "with-stray-dir")
+    with_stray_dir_sha256 = hashlib.sha256(with_stray_dir.read_bytes()).hexdigest()
+
+    assert with_stray_dir_sha256 == baseline_sha256
+    namelist = zipfile.ZipFile(with_stray_dir).namelist()
+    assert not any("hooks" in name for name in namelist)

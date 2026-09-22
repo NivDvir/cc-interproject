@@ -38,8 +38,28 @@ def stage_source(staging_dir: Path) -> None:
         return {name for name in names if name in SKIP_NAMES or Path(name).suffix in SKIP_SUFFIXES}
 
     shutil.copytree(SOURCE_PACKAGE, staging_dir / "cc_interproject", ignore=_ignore)
+    _prune_empty_dirs(staging_dir)
     for path in staging_dir.rglob("*"):
         os.utime(path, (FIXED_TIMESTAMP, FIXED_TIMESTAMP))
+
+
+def _prune_empty_dirs(staging_dir: Path) -> None:
+    """Remove directories left empty by `_ignore`.
+
+    A source directory that exists on disk only because of an ignored entry (a stray
+    `__pycache__` surviving under an otherwise-deleted subpackage, say) still gets created by
+    `copytree`, but ends up with nothing inside it. zipapp would then add that directory as its
+    own archive member, so the archive's hash would depend on a directory the source tree carries
+    no real files for. Walking bottom-up and removing anything with no entries left makes the
+    archive depend only on files that exist.
+    """
+    # `os.listdir`, not the walk's own `dirnames`/`filenames`: topdown=False snapshots each
+    # directory's entries before descending into it, so a child directory just rmdir'd on this
+    # same pass would still show up in its parent's stale `dirnames`, hiding a now-empty parent
+    # from a single bottom-up pass.
+    for dirpath, _dirnames, _filenames in os.walk(staging_dir, topdown=False):
+        if not os.listdir(dirpath):
+            os.rmdir(dirpath)
 
 
 def build(output_dir: Path) -> Path:
