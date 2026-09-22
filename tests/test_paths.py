@@ -15,6 +15,24 @@ def test_skip_names_includes_common_vendored_dirs():
     assert {"node_modules", ".venv", ".git", ".Trash"} <= names
 
 
+def test_skip_names_includes_claude_and_build_tool_dirs_on_every_os():
+    names = paths.skip_names()
+    assert {
+        ".claude",
+        ".build",
+        "worktrees",
+        "checkouts",
+        "dist",
+        "build",
+        "target",
+        ".tox",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+        "site-packages",
+    } <= names
+
+
 def test_skip_names_adds_windows_extras_only_on_windows():
     names = paths.skip_names()
     if sys.platform.startswith("win"):
