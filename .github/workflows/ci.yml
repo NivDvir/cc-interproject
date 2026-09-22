@@ -2,11 +2,17 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.9", "3.13"]
@@ -18,8 +24,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Report Python version
+        run: python -c "import sys; print(sys.version)"
+
+      - name: Put fake claude on PATH
+        shell: bash
+        run: echo "$PWD/fixtures/claude_fake" >> "$GITHUB_PATH"
+
       - name: Install dev tools
-        run: pip install ruff pytest
+        run: python -m pip install ruff pytest
 
       - name: Lint
         run: ruff check .
@@ -28,13 +41,25 @@ jobs:
         run: ruff format --check .
 
       - name: Test
-        run: pytest -q
+        run: python -m pytest -q
 
-      # Enabled in wave 4, once tools/bundle.py and dist/install.py exist.
       - name: Bundle check
-        if: false
         run: python tools/bundle.py --check
 
-      - name: Dry-run install
-        if: false
-        run: python dist/install.py --dry-run --no-browser --root fixtures/forest
+      - name: Dry-run install smoke test
+        shell: bash
+        env:
+          KIT_SKIP_AUTH: "1"
+        run: |
+          FOREST="$(mktemp -d)/forest"
+          cp -R fixtures/forest "$FOREST"
+          printf 'all\n' | python dist/install.py --dry-run --no-browser \
+            --root "$FOREST" --modules laws | tee out.txt
+          grep -q "Dry run: nothing written." out.txt
+
+      - name: Upload bundled installer
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: install.py
+          path: dist/install.py
