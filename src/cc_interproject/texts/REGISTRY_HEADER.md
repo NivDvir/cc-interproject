@@ -8,10 +8,10 @@ Every row carries who wrote it, because that decides how much weight it carries:
 
 - **`written-by: self`** — the project wrote this about itself. Authoritative.
 - **`written-by: installer`** — this kit wrote a placeholder row from the project's `CLAUDE.md`
-  because no session answered when installed. Usable, not authoritative. The project replaces the
-  placeholder with its own words the next time it runs; the label then records who wrote the
-  current text, `self`. A placeholder row that a project never replaces stays usable; it is simply
-  not authoritative.
+  because no session answered when installed. Usable, not authoritative. At the start of its next
+  session, unconditionally, the project replaces the placeholder with a row it writes itself; the
+  label then records who wrote the current text, `self`. A placeholder row that a project never
+  replaces stays usable; it is simply not authoritative.
 
 ## Columns
 

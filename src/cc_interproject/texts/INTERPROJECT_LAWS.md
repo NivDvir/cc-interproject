@@ -63,8 +63,11 @@ to another, they are one request. A request is one of three kinds, named explici
 (is this true, is this yours), **evidence** (give me your material — the holder decides what leaves
 its scope), or **capability** (operate your tool for me, tiered by what the tool does, never by who
 asks). Asking is how facts cross boundaries — never verify another's domain yourself, and never
-impose a constraint that forbids an owner from refreshing its own facts. An owner who cannot be
-reached at all is a gap: log it and stop. Self-service is not a fallback.
+impose a constraint that forbids an owner from refreshing its own facts. Reading another project's
+files yourself — its `CLAUDE.md`, its code, anything under its directory — is verifying its domain
+yourself, whatever the reason; asking its head is the only route, even when the file sits in plain
+reach. An owner who cannot be reached at all is a gap: log it and stop. Self-service is not a
+fallback.
 
 ## Law 4 — Authority
 

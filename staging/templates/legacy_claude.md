@@ -8,15 +8,17 @@ wholesale export working. Everything else waits for the replacement.
 
 <!-- cc-interproject:begin id=project-pointer v=1 -->
 The owner of this machine installed Claude Code Inter-Project Communication (cc-interproject) and
-chose to include this project in it. Before any cross-project work, read
-`~/.claude/INTERPROJECT_LAWS.md`, `~/.claude/PROJECT_REGISTRY.md` and
-`~/.claude/INTERPROJECT_PROTOCOL.md`.
+chose to include this project in it.
 
-The registry's rule is that each project describes itself. The installer may have left a
-placeholder row for this project, marked `written-by: installer`. The owner asks you, once, to
-replace that placeholder with a row you write yourself from this CLAUDE.md, and to mark it
-`written-by: self` because you are then its author. Then continue with the user's task. Do not
-edit other projects' rows or files; reach other projects only through their heads.
+At the start of this session, check your row in `~/.claude/PROJECT_REGISTRY.md`. If it is marked
+`written-by: installer`, it is a placeholder the installer wrote from this CLAUDE.md. The owner
+asks you to replace it now with a row you write yourself, marked `written-by: self` because you
+are then its author. This takes one edit and is done once.
+
+For any cross-project work, read `~/.claude/INTERPROJECT_LAWS.md` and
+`~/.claude/INTERPROJECT_PROTOCOL.md` first. Other projects are reached only through their heads:
+ask, do not read or edit their files, and do not answer for them. What the registry says about a
+project is theirs; what you learn by asking is evidence.
 <!-- cc-interproject:end id=project-pointer -->
 
 ## Notes added after that block
