@@ -31,10 +31,9 @@ EXIT_OK = 0
 EXIT_INSTALL_ERROR = 5
 EXIT_ABORTED = 6
 RULER = "=" * 60
-TEE = "├──"
-TEE_LAST = "└──"
-PIPE = "│   "
 BLANK = "    "
+BOX_CONNECTORS = ("├──", "└──", "│   ")
+ASCII_CONNECTORS = ("|--", "`--", "|   ")
 
 
 def run(run: Run) -> int:
@@ -90,24 +89,39 @@ def _poll_dots(fetch) -> dict:
     return progress
 
 
+def _connectors() -> tuple[str, str, str]:
+    """The box-drawing connectors, or their ASCII stand-ins of the same widths when stdout cannot
+    encode them. A Windows console defaults to a code page with no box-drawing characters, and one
+    `UnicodeEncodeError` on a print would end the install.
+    """
+    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+    try:
+        "".join(BOX_CONNECTORS).encode(encoding)
+    except (LookupError, UnicodeEncodeError):
+        return ASCII_CONNECTORS
+    return BOX_CONNECTORS
+
+
 def _render_forest(trees: list[dict]) -> list[str]:
     """One block per tree: the numbered head, then its subtrees as an ASCII tree of any depth."""
     lines: list[str] = []
+    connectors = _connectors()
     for index, tree in enumerate(trees, start=1):
         lines.append(f"  [{index}] {_head_label(tree)}")
-        lines.extend(_render_subtrees(tree.get("subtrees") or [], prefix=" " * 6))
+        lines.extend(_render_subtrees(tree.get("subtrees") or [], " " * 6, connectors))
         lines.append("")
     return lines
 
 
-def _render_subtrees(subtrees: list[dict], prefix: str) -> list[str]:
+def _render_subtrees(subtrees: list[dict], prefix: str, connectors: tuple[str, str, str]) -> list[str]:
+    tee, tee_last, pipe = connectors
     lines: list[str] = []
     last_index = len(subtrees) - 1
     for index, subtree in enumerate(subtrees):
         is_last = index == last_index
-        lines.append(f"{prefix}{TEE_LAST if is_last else TEE} {_subtree_label(subtree)}")
-        child_prefix = prefix + (BLANK if is_last else PIPE)
-        lines.extend(_render_subtrees(subtree.get("subtrees") or [], child_prefix))
+        lines.append(f"{prefix}{tee_last if is_last else tee} {_subtree_label(subtree)}")
+        child_prefix = prefix + (BLANK if is_last else pipe)
+        lines.extend(_render_subtrees(subtree.get("subtrees") or [], child_prefix, connectors))
     return lines
 
 

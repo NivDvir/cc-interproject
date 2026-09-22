@@ -7,7 +7,10 @@ subtree — exactly two selected projects, both answered by the fake `claude` as
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
+
+import pytest
 
 from six_laws_kit.heads import preflight
 from six_laws_kit.manifest import record
@@ -67,7 +70,15 @@ def _tree(name: str, path: str, subtrees=None) -> dict:
     }
 
 
-def test_forest_renders_each_tree_as_a_block_with_an_ascii_subtree():
+@pytest.fixture
+def box_connectors(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin the box-drawing connectors, so a runner whose stdout is a code page without them (a
+    Windows console) does not turn these rendering assertions into encoding assertions.
+    """
+    monkeypatch.setattr(terminal, "_connectors", lambda: terminal.BOX_CONNECTORS)
+
+
+def test_forest_renders_each_tree_as_a_block_with_an_ascii_subtree(box_connectors):
     great = _tree("Ledger", "/h/code/platform/services/billing/ledger")
     grand = _tree("Billing", "/h/code/platform/services/billing", [great])
     child = _tree("Services", "/h/code/platform/services", [grand])
@@ -86,7 +97,7 @@ def test_forest_renders_each_tree_as_a_block_with_an_ascii_subtree():
     assert "no subtrees" in heads[1]
 
 
-def test_forest_uses_the_branch_connector_for_a_middle_subtree():
+def test_forest_uses_the_branch_connector_for_a_middle_subtree(box_connectors):
     trees = [
         _tree(
             "Mono",
@@ -100,6 +111,21 @@ def test_forest_uses_the_branch_connector_for_a_middle_subtree():
     assert lines[1].startswith("      ├── Ui")
     assert lines[2].startswith("      │   └── Deep")
     assert lines[3].startswith("      └── Core")
+
+
+def test_forest_falls_back_to_ascii_when_stdout_cannot_encode_box_drawing(monkeypatch):
+    """A cp1252 console would raise UnicodeEncodeError on the first connector and end the
+    install, so the same shape is drawn with ASCII of identical widths instead.
+    """
+    monkeypatch.setattr(terminal.sys, "stdout", io.TextIOWrapper(io.BytesIO(), encoding="cp1252"))
+    trees = [_tree("Mono", "/h/mono", [_tree("Ui", "/h/mono/ui"), _tree("Core", "/h/mono/core")])]
+
+    lines = terminal._render_forest(trees)
+
+    assert lines[1].startswith("      |-- Ui")
+    assert lines[2].startswith("      `-- Core")
+    widths = zip(terminal.BOX_CONNECTORS, terminal.ASCII_CONNECTORS)
+    assert all(len(box) == len(plain) for box, plain in widths)
 
 
 def test_eof_at_the_first_prompt_aborts(forest_home, fake_claude_on_path, monkeypatch):
