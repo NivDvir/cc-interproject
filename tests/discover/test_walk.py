@@ -7,8 +7,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from six_laws_kit import paths
-from six_laws_kit.discover import walk
+from cc_interproject import paths
+from cc_interproject.discover import walk
 
 
 def test_walk_finds_every_top_level_and_nested_project(forest_home):

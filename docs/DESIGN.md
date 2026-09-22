@@ -1,18 +1,18 @@
-# six-laws-kit — design (v1, 2026-09-22)
+# cc-interproject — design (v1, 2026-09-22)
 
-Behaviour is specified in `../../../publication/six-laws-kit/SPEC.md`. This file fixes the shape of
+Behaviour is specified in `../../../publication/cc-interproject/SPEC.md`. This file fixes the shape of
 the code. `INTERFACES.md` fixes the signatures. `STYLE.md` fixes the style.
 
 ## 1. Repo tree (every source file ≤ 400 lines)
 
 ```
-six-laws-kit/
+cc-interproject/
   README.md LICENSE CHANGELOG.md SECURITY.md PRIVACY.md CODEOWNERS ARCHITECTURE.md CLAUDE.md
   ruff.toml pyproject.toml .pre-commit-config.yaml
   .github/workflows/ci.yml .github/workflows/release.yml .github/ISSUE_TEMPLATE/bug_report.md
   docs/DESIGN.md docs/INTERFACES.md docs/STYLE.md
   tools/ARCHITECTURE.md tools/bundle.py        zipapp -> dist/install.py + SHA256SUMS; --check for CI
-  src/six_laws_kit/
+  src/cc_interproject/
     ARCHITECTURE.md __init__.py (VERSION) __main__.py
     cli.py          argparse, modes (install | --dry-run | --uninstall | --status), preflight, exit codes
     run_state.py    Run / Tree / Row / Action dataclasses — the only shared state
@@ -24,7 +24,7 @@ six-laws-kit/
                assets/wizard.js (controller) assets/wizard2.js (DOM builders) assets/icons.svg
     write/     ARCHITECTURE.md plan.py apply.py blocks.py registry.py
     manifest/  ARCHITECTURE.md record.py uninstall.py status.py
-    texts/     ARCHITECTURE.md loader.py SIX_LAWS.md INTERPROJECT_PROTOCOL.md PRIOR_ART.md
+    texts/     ARCHITECTURE.md loader.py INTERPROJECT_LAWS.md INTERPROJECT_PROTOCOL.md PRIOR_ART.md
                DISPATCHER_QUEUE.md REGISTRY_HEADER.md PROJECT_POINTER.md ACCOUNT_POINTER.md
   tests/       mirrors src 1:1; conftest.py; test_architecture.py (import gate)
   fixtures/    README.md forest/ claude_fake/claude claude_fake/claude.cmd
@@ -86,14 +86,14 @@ Auth-failure text is recognised and reported as a local problem, never counted a
 Fallback (`heads/fallback.py`): name = first `# ` heading else directory name; owns = first
 non-heading paragraph cut to 40 words; the rest `NOT STATED`; `written-by: installer`.
 
-## 5. Manifest (`~/.claude/six-laws.manifest.json`, schema 1)
+## 5. Manifest (`~/.claude/interproject.manifest.json`, schema 1)
 
 Header: kit name/version/url, installed_at (UTC ISO), python, platform, backup_dir. `entries[]`
 kinds: `created_file` (path, sha256_after, bytes), `created_dir` (path), `backup` (path,
 backup_path, sha256_before), `inserted_block` (path, marker_id, marker_version, begin, end,
 sha256_before, sha256_after, bytes_added, leading_blank_added, trailing_newline_added). `heads[]`:
-path, written_by, status, seconds. Markers: `<!-- six-laws-kit:begin id=<id> v=<n> -->` /
-`<!-- six-laws-kit:end id=<id> -->`.
+path, written_by, status, seconds. Markers: `<!-- cc-interproject:begin id=<id> v=<n> -->` /
+`<!-- cc-interproject:end id=<id> -->`.
 
 Uninstall walks entries in reverse. `created_file`: sha matches → delete, else ask. `inserted_block`:
 sha matches → strip inclusive and undo the recorded blank/newline; sha differs but both markers
@@ -147,3 +147,8 @@ wizard has no Modules step; `settings.json` is never touched; `--modules` is gon
 
 zipapp bundle named `install.py` (README: download then run). Head-call model fixed to sonnet, not
 user-selectable in v0.1.
+
+**2026-09-22, Niv: the product is named "Claude Code Inter-Project Communication", slug
+`cc-interproject`.** Renamed from six-laws-kit. No name may carry the number of laws, because the
+laws may change; the laws themselves stay numbered inside `INTERPROJECT_LAWS.md`, which is content,
+not a name.

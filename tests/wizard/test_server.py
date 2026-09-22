@@ -1,4 +1,4 @@
-"""Tests for six_laws_kit.wizard.server against a real server on a real port: the page render, the
+"""Tests for cc_interproject.wizard.server against a real server on a real port: the page render, the
 token gate, the loopback Host/Origin gate, unknown paths, and the quit shutdown.
 """
 
@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from six_laws_kit.run_state import Run
-from six_laws_kit.wizard import server
+from cc_interproject.run_state import Run
+from cc_interproject.wizard import server
 
 
 def make_run(home: Path, mode: str = "install") -> Run:

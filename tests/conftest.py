@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from six_laws_kit import paths
+from cc_interproject import paths
 
 _FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures"
 _FOREST_SOURCE = _FIXTURES_DIR / "forest"

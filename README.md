@@ -1,8 +1,8 @@
-# six-laws-kit
+# Claude Code Inter-Project Communication (`cc-interproject`)
 
-An installer that applies the six-law setup for running several Claude Code projects on one
-machine as a system, as described in the article "The Six Laws for Running Claude Code Projects
-as a System." It is for anyone running more than one Claude Code project on the same machine who
+An installer that applies the inter-project setup for running several Claude Code projects on one
+machine as a system, as described in the article on running Claude Code projects as a system. It
+is for anyone running more than one Claude Code project on the same machine who
 wants those projects to follow a shared ownership and communication protocol. It writes the
 protocol files and lets each chosen project answer for itself. It does not write the article's
 content for you, does not touch anything outside your home directory, and does not run
@@ -12,14 +12,14 @@ automatically after install: you run it once, review what it will do, and confir
 
 Under `~/.claude`, the installer can create or update:
 
-- `SIX_LAWS.md`, `PROJECT_REGISTRY.md`, `INTERPROJECT_PROTOCOL.md`, `PRIOR_ART.md`,
+- `INTERPROJECT_LAWS.md`, `PROJECT_REGISTRY.md`, `INTERPROJECT_PROTOCOL.md`, `PRIOR_ART.md`,
   `DISPATCHER_QUEUE.md`
 - one pointer line appended to `~/.claude/CLAUDE.md`
-- a manifest, `~/.claude/six-laws.manifest.json`, recording everything it wrote
-- backups under `~/.claude/six-laws-backups/` of any file it changed
+- a manifest, `~/.claude/interproject.manifest.json`, recording everything it wrote
+- backups under `~/.claude/interproject-backups/` of any file it changed
 
 For each project you choose, it appends one marked block to that project's own `CLAUDE.md`: a
-pointer to `~/.claude/SIX_LAWS.md`, and a note to rewrite its registry row in its own words on its
+pointer to `~/.claude/INTERPROJECT_LAWS.md`, and a note to rewrite its registry row in its own words on its
 next session if the row was written by the installer.
 
 ## Requirements
@@ -35,7 +35,7 @@ next session if the row was written by the installer.
 Download and run:
 
 ```
-curl -fsSL https://github.com/NivDvir/six-laws-kit/releases/latest/download/install.py -o install.py
+curl -fsSL https://github.com/NivDvir/cc-interproject/releases/latest/download/install.py -o install.py
 python3 install.py
 ```
 
@@ -47,9 +47,9 @@ running it: `unzip -l install.py`.
 Or clone the source and run it from there:
 
 ```
-git clone https://github.com/NivDvir/six-laws-kit
-cd six-laws-kit
-PYTHONPATH=src python3 -m six_laws_kit
+git clone https://github.com/NivDvir/cc-interproject
+cd cc-interproject
+PYTHONPATH=src python3 -m cc_interproject
 ```
 
 ## What happens
@@ -108,10 +108,10 @@ Exit codes:
 
 ## Uninstall
 
-`--uninstall` reads `~/.claude/six-laws.manifest.json` and undoes exactly what it lists: it
+`--uninstall` reads `~/.claude/interproject.manifest.json` and undoes exactly what it lists: it
 deletes files the installer created and strips the marked blocks it inserted. Backups it made
 along the way are left on disk under
-`~/.claude/six-laws-backups/` unless you pass `--restore-backups`; either way, the path is
+`~/.claude/interproject-backups/` unless you pass `--restore-backups`; either way, the path is
 printed so you know where they are.
 
 ## Privacy and security

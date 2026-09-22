@@ -1,4 +1,4 @@
-"""Tests for six_laws_kit.cli: argument parsing, preflight gating, and the exit codes documented
+"""Tests for cc_interproject.cli: argument parsing, preflight gating, and the exit codes documented
 in cli.main's own docstring.
 """
 
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from six_laws_kit import VERSION, cli
+from cc_interproject import VERSION, cli
 
 
 def _hash_tree(root: Path) -> dict:
@@ -35,7 +35,7 @@ def test_version_flag_prints_name_and_version(capsys):
     with pytest.raises(SystemExit) as excinfo:
         cli.main(["--version"])
     assert excinfo.value.code == 0
-    assert capsys.readouterr().out.strip() == f"six-laws-kit {VERSION}"
+    assert capsys.readouterr().out.strip() == f"cc-interproject {VERSION}"
 
 
 def test_conflicting_mode_flags_exit_2():

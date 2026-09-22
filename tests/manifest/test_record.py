@@ -3,8 +3,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from six_laws_kit.manifest import record
-from six_laws_kit.run_state import Row, Run
+from cc_interproject.manifest import record
+from cc_interproject.run_state import Row, Run
 
 
 def _run(tmp_path: Path) -> Run:
@@ -28,7 +28,7 @@ def _run(tmp_path: Path) -> Run:
 def test_new_builds_the_documented_header_fields(tmp_path: Path):
     manifest = record.new(_run(tmp_path), "20260101T000000Z")
     assert manifest["schema"] == 1
-    assert manifest["kit_name"] == "six-laws-kit"
+    assert manifest["kit_name"] == "cc-interproject"
     assert manifest["installed_at"] == "20260101T000000Z"
     assert manifest["entries"] == []
     assert manifest["heads"] == [
@@ -45,7 +45,7 @@ def test_add_entry_appends_in_place():
 
 def test_write_then_load_round_trips(tmp_path: Path):
     manifest = {"schema": 1, "entries": [{"kind": "created_file", "path": "x"}]}
-    path = tmp_path / "six-laws.manifest.json"
+    path = tmp_path / "interproject.manifest.json"
     record.write(manifest, path)
     assert path.read_text(encoding="utf-8").endswith("\n")
     assert record.load(path) == manifest

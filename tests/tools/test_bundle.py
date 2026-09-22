@@ -1,7 +1,7 @@
 """Tests for tools/bundle.py: build the zipapp installer into a temp directory, then run it
 exactly as a downloaded `install.py` would be run — version, status, dry-run, and reading its
 bundled assets and texts through `importlib.resources` from inside the archive. `tools/` is a
-build-time script outside the `six_laws_kit` package, so it is loaded here by file path.
+build-time script outside the `cc_interproject` package, so it is loaded here by file path.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 FIXTURES_DIR = REPO_ROOT / "fixtures"
 RENDER_PAGE_CHECK = (
     "import sys; sys.path.insert(0, sys.argv[1]); "
-    "from six_laws_kit.wizard import server; "
+    "from cc_interproject.wizard import server; "
     "html = server.render_page('t'); "
     "assert '<!--@css-->' not in html and 'KIT_TOKEN' in html; "
     "print('page ok', len(html))"
@@ -63,7 +63,7 @@ def _run(archive: Path, args: list[str], home: Path, stdin: str = "") -> subproc
 def test_version_prints_name_and_version(archive_path, tmp_path):
     result = _run(archive_path, ["--version"], tmp_path)
     assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == "six-laws-kit 0.1.0"
+    assert result.stdout.strip() == "cc-interproject 0.1.0"
 
 
 def test_status_under_temp_home_exits_0(archive_path, tmp_path):

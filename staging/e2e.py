@@ -25,16 +25,16 @@ from pathlib import Path
 STAGING_DIR = Path(__file__).resolve().parent
 REPO_ROOT = STAGING_DIR.parent
 FAKE_CLAUDE_DIR = REPO_ROOT / "fixtures" / "claude_fake"
-TEXTS_DIR = REPO_ROOT / "src" / "six_laws_kit" / "texts"
-BACKUPS_PREFIX = ".claude/six-laws-backups/"
+TEXTS_DIR = REPO_ROOT / "src" / "cc_interproject" / "texts"
+BACKUPS_PREFIX = ".claude/interproject-backups/"
 
 ACCOUNT_FILES = (
-    "SIX_LAWS.md",
+    "INTERPROJECT_LAWS.md",
     "INTERPROJECT_PROTOCOL.md",
     "PRIOR_ART.md",
     "DISPATCHER_QUEUE.md",
     "PROJECT_REGISTRY.md",
-    "six-laws.manifest.json",
+    "interproject.manifest.json",
 )
 LEGACY_TAIL = "## Notes added after that block"
 
@@ -66,7 +66,7 @@ def installer_path(holder: list) -> tuple[Path, str]:
     )
     if check.returncode == 0:
         return REPO_ROOT / "dist" / "install.py", "dist/install.py (current)"
-    tmp = tempfile.mkdtemp(prefix="six-laws-bundle-")
+    tmp = tempfile.mkdtemp(prefix="cc-interproject-bundle-")
     holder.append(tmp)
     subprocess.run(
         [sys.executable, "tools/bundle.py", "--output-dir", tmp],
@@ -276,7 +276,7 @@ def _check_encoding_and_language(home: Path) -> tuple[bool, str]:
 
 
 def _check_manifest(home: Path) -> tuple[bool, str]:
-    manifest = json.loads((home / ".claude" / "six-laws.manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads((home / ".claude" / "interproject.manifest.json").read_text(encoding="utf-8"))
     entries = manifest.get("entries", [])
     created = {entry["path"] for entry in entries if entry["kind"] == "created_file"}
     expected_created = {str(home / ".claude" / name) for name in ACCOUNT_FILES if "manifest" not in name}

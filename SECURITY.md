@@ -7,11 +7,11 @@ runs as root or calls `sudo`.
 
 Under `~/.claude`, it can create or update:
 
-- `SIX_LAWS.md`, `PROJECT_REGISTRY.md`, `INTERPROJECT_PROTOCOL.md`, `PRIOR_ART.md`,
+- `INTERPROJECT_LAWS.md`, `PROJECT_REGISTRY.md`, `INTERPROJECT_PROTOCOL.md`, `PRIOR_ART.md`,
   `DISPATCHER_QUEUE.md`
 - one pointer line appended to `~/.claude/CLAUDE.md`
-- backups under `~/.claude/six-laws-backups/`
-- a manifest, `~/.claude/six-laws.manifest.json`
+- backups under `~/.claude/interproject-backups/`
+- a manifest, `~/.claude/interproject.manifest.json`
 
 For each project the user chooses, it appends one marked block to that project's own
 `CLAUDE.md`. It never edits any other part of a chosen project.

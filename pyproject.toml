@@ -1,7 +1,7 @@
 [project]
-name = "six-laws-kit"
+name = "cc-interproject"
 version = "0.1.0"
-description = "Installer for the six-law setup for Claude Code projects run as a system."
+description = "Claude Code Inter-Project Communication: the inter-project setup installer."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

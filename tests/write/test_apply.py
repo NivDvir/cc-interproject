@@ -4,25 +4,25 @@ from pathlib import Path
 
 import pytest
 
-from six_laws_kit import paths
-from six_laws_kit.manifest import record
-from six_laws_kit.run_state import Run, Tree
-from six_laws_kit.write import apply, plan
+from cc_interproject import paths
+from cc_interproject.manifest import record
+from cc_interproject.run_state import Run, Tree
+from cc_interproject.write import apply, plan
 
 _TEXTS = {
-    "SIX_LAWS.md": "law text\n",
+    "INTERPROJECT_LAWS.md": "law text\n",
     "INTERPROJECT_PROTOCOL.md": "protocol text\n",
     "PRIOR_ART.md": "prior art text\n",
     "DISPATCHER_QUEUE.md": "queue text\n",
     "REGISTRY_HEADER.md": "# Project registry\n\nRead before any cross-project work.\n",
-    "ACCOUNT_POINTER.md": "Read the six laws before any cross-project work.\n\n---\n\nmore prose here.\n",
+    "ACCOUNT_POINTER.md": "Read the laws before any cross-project work.\n\n---\n\nmore prose here.\n",
     "PROJECT_POINTER.md": "Reach other projects only through their heads.\n",
 }
 
 
 @pytest.fixture(autouse=True)
 def _fake_texts(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("six_laws_kit.texts.loader.read", lambda name: _TEXTS[name])
+    monkeypatch.setattr("cc_interproject.texts.loader.read", lambda name: _TEXTS[name])
 
 
 def _make_run(home: Path) -> Run:
@@ -49,7 +49,8 @@ def test_execute_writes_files_and_a_matching_manifest(forest_home: Path):
     assert len(progress_calls) == len(run.plan)
     assert progress_calls[-1][1:] == (len(run.plan), len(run.plan))
 
-    assert (run.claude_dir / "SIX_LAWS.md").read_text(encoding="utf-8") == _TEXTS["SIX_LAWS.md"]
+    laws = run.claude_dir / "INTERPROJECT_LAWS.md"
+    assert laws.read_text(encoding="utf-8") == _TEXTS["INTERPROJECT_LAWS.md"]
     assert (run.claude_dir / "PROJECT_REGISTRY.md").exists()
 
     kinds = [entry["kind"] for entry in manifest["entries"]]

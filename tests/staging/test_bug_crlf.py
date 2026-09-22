@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from six_laws_kit.run_state import Run, Tree
-from six_laws_kit.write import plan
+from cc_interproject.run_state import Run, Tree
+from cc_interproject.write import plan
 
 
 def test_pointer_insert_keeps_crlf(tmp_path: Path) -> None:

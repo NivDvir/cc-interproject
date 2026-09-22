@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from six_laws_kit.write import blocks
+from cc_interproject.write import blocks
 
 
 def test_render_wraps_body_between_markers_for_the_given_id_and_version():
     text = blocks.render("project-pointer", 1, "hello\n")
     assert text == (
-        "<!-- six-laws-kit:begin id=project-pointer v=1 -->\n"
+        "<!-- cc-interproject:begin id=project-pointer v=1 -->\n"
         "hello\n"
-        "<!-- six-laws-kit:end id=project-pointer -->\n"
+        "<!-- cc-interproject:end id=project-pointer -->\n"
     )
 
 
 def test_render_adds_a_trailing_newline_to_the_body_when_missing():
     text = blocks.render("registry", 1, "no newline")
-    assert "no newline\n<!-- six-laws-kit:end" in text
+    assert "no newline\n<!-- cc-interproject:end" in text
 
 
 def test_contains_true_after_insert_false_before():

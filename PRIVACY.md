@@ -8,5 +8,5 @@ Anthropic, under your own logged-in Claude account, the same as any other use of
 Nothing is sent to the author of this kit. The installer has no telemetry, no analytics,
 and no update checks.
 
-The manifest (`~/.claude/six-laws.manifest.json`) and the backups the installer takes
+The manifest (`~/.claude/interproject.manifest.json`) and the backups the installer takes
 stay on your machine. They are never uploaded or shared.

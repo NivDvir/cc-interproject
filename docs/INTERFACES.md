@@ -46,7 +46,7 @@ def selected_trees(run: Run) -> List[Tree]          # flattened, selected only, 
 
 ## paths.py
 ```python
-KIT_NAME = "six-laws-kit"; MANIFEST_NAME = "six-laws.manifest.json"; BACKUPS_SUBDIR = "six-laws-backups"
+KIT_NAME = "cc-interproject"; MANIFEST_NAME = "interproject.manifest.json"; BACKUPS_SUBDIR = "interproject-backups"
 def skip_names() -> Set[str]                         # per-OS directory names never entered
 def home_dir() -> Path                               # $HOME override else Path.home() (Windows ignores HOME)
 def is_windows_shim(claude_bin: str) -> bool          # True if claude_bin resolves to a .cmd/.bat file
@@ -83,7 +83,7 @@ fallback.row_from_claude_md(claude_md: Path, seconds: float, status: str) -> Row
 
 ## write/
 ```python
-blocks.BEGIN = "<!-- six-laws-kit:begin id={id} v={v} -->"; blocks.END = "<!-- six-laws-kit:end id={id} -->"
+blocks.BEGIN = "<!-- cc-interproject:begin id={id} v={v} -->"; blocks.END = "<!-- cc-interproject:end id={id} -->"
 blocks.render(marker_id: str, version: int, body: str) -> str
 blocks.contains(text: str, marker_id: str) -> bool
 blocks.insert(text: str, block: str) -> Tuple[str, bool, bool]     # (new_text, leading_blank_added, trailing_newline_added)
@@ -108,7 +108,7 @@ status.report(manifest: dict, claude_dir: Path) -> str
 
 ## texts/
 ```python
-loader.read(name: str) -> str          # "SIX_LAWS.md" etc.; works from source tree and from the zipapp
+loader.read(name: str) -> str          # "INTERPROJECT_LAWS.md" etc.; works from source tree and from the zipapp
 loader.names() -> List[str]
 ```
 

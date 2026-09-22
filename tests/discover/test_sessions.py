@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from six_laws_kit import paths
-from six_laws_kit.discover import forest, sessions, walk
+from cc_interproject import paths
+from cc_interproject.discover import forest, sessions, walk
 
 
 def test_sessions_annotates_alpha_and_leaves_beta_bare(forest_home):

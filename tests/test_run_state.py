@@ -7,8 +7,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from six_laws_kit import run_state
-from six_laws_kit.run_state import Tree
+from cc_interproject import run_state
+from cc_interproject.run_state import Tree
 
 
 def _args(**overrides):

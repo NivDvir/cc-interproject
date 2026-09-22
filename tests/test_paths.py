@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path, PureWindowsPath
 
-from six_laws_kit import paths
+from cc_interproject import paths
 
 
 def test_skip_names_includes_common_vendored_dirs():
@@ -41,8 +41,8 @@ def test_skip_names_adds_windows_extras_only_on_windows():
 
 def test_manifest_and_backups_paths(tmp_path):
     claude_dir = tmp_path / ".claude"
-    assert paths.manifest_path(claude_dir) == claude_dir / "six-laws.manifest.json"
-    assert paths.backups_dir(claude_dir, "2026-09-22") == claude_dir / "six-laws-backups" / "2026-09-22"
+    assert paths.manifest_path(claude_dir) == claude_dir / "interproject.manifest.json"
+    assert paths.backups_dir(claude_dir, "2026-09-22") == claude_dir / "interproject-backups" / "2026-09-22"
 
 
 def test_encode_project_dir_posix_path():

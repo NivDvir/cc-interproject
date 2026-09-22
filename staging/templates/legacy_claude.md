@@ -6,16 +6,16 @@ It is still the system of record for wholesale orders, so it cannot simply be de
 Only two things are allowed here: security fixes, and changes needed to keep the
 wholesale export working. Everything else waits for the replacement.
 
-<!-- six-laws-kit:begin id=project-pointer v=1 -->
+<!-- cc-interproject:begin id=project-pointer v=1 -->
 This project is one head in a forest of Claude Code projects on this machine. Before any
-cross-project work read `~/.claude/SIX_LAWS.md`, `~/.claude/PROJECT_REGISTRY.md`, and
+cross-project work read `~/.claude/INTERPROJECT_LAWS.md`, `~/.claude/PROJECT_REGISTRY.md`, and
 `~/.claude/INTERPROJECT_PROTOCOL.md`.
 
 If your row in the registry is marked `written-by: installer`, rewrite it in your own words as
 `written-by: self` on this session, then continue with the user's task.
 
 Reach other projects only through their heads; never edit their files.
-<!-- six-laws-kit:end id=project-pointer -->
+<!-- cc-interproject:end id=project-pointer -->
 
 ## Notes added after that block
 
