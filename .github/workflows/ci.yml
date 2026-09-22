@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload bundled installer
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: install.py
           path: dist/install.py
