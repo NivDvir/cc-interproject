@@ -158,6 +158,12 @@ ruff format --check, pytest -q, `tools/bundle.py --check`, `dist/install.py --dr
 
 ## 9. Decisions taken (do not re-open)
 
+**2026-09-22, Niv: the routing module is OUT of this kit.** SELF/DELEGATE routing and its three hooks
+are a token-economy concern inside one project, not inter-project communication; shipping a hook that
+denies tool calls under the article's name was wrong. The code lives on branch `routing-module`
+(frozen at the last green main) for a possible second kit. v0.1 installs the laws module only; the
+wizard has no Modules step; `settings.json` is never touched; `--modules` is gone.
+
 zipapp bundle named `install.py` (README: download then run). Routing module ON by default,
 pre-unticked when same-purpose hooks exist. Head-call model fixed to sonnet, not user-selectable in v0.1.
 `PACKET_REMINDER.md` is a neutral public statement of the SELF/DELEGATE rule, approved by Niv.
