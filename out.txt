@@ -1,0 +1,22 @@
+This installer looks at the Claude Code projects on this computer, asks each one you choose
+a single question about itself, and then writes a small set of shared files so every project
+can find and recognize the others. Nothing is written until you confirm the exact changes on
+the Review step.
+Cost note: one short Claude call per chosen project, on your account.
+
+Scanning for Claude Code projects.
+Found 3 project(s):
+  [1] Coldframe Notes (no prior session)
+  [2] Dot-Claude Home (no prior session)
+  [3] Meridian Logbook (no prior session)
+      Meridian Logbook — Tidal Module (no prior session)
+Select projects to include (numbers, e.g. "1 3", or "all"): Install routing policy and hooks? [Y/n]: Registering heads (each chosen project answers once)...
+  /var/folders/82/jv9nx7dn3rl4bxc92rng0s9c0000gn/T/tmp.va8MqJCxlz/forest/beta: asked
+  /var/folders/82/jv9nx7dn3rl4bxc92rng0s9c0000gn/T/tmp.va8MqJCxlz/forest/dot-claude: waiting
+  /var/folders/82/jv9nx7dn3rl4bxc92rng0s9c0000gn/T/tmp.va8MqJCxlz/forest/alpha: waiting
+  /var/folders/82/jv9nx7dn3rl4bxc92rng0s9c0000gn/T/tmp.va8MqJCxlz/forest/alpha/sub: waiting
+  /var/folders/82/jv9nx7dn3rl4bxc92rng0s9c0000gn/T/tmp.va8MqJCxlz/forest/beta: answered
+  /var/folders/82/jv9nx7dn3rl4bxc92rng0s9c0000gn/T/tmp.va8MqJCxlz/forest/dot-claude: answered
+  /var/folders/82/jv9nx7dn3rl4bxc92rng0s9c0000gn/T/tmp.va8MqJCxlz/forest/alpha: answered
+  /var/folders/82/jv9nx7dn3rl4bxc92rng0s9c0000gn/T/tmp.va8MqJCxlz/forest/alpha/sub: answered
+Review the changes. Nothing has been written yet.

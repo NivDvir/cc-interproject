@@ -7,6 +7,7 @@ exists, writes nothing, computes every diff in memory. `render_text` prints the 
 from __future__ import annotations
 
 import difflib
+import importlib.resources
 import json
 from pathlib import Path
 
@@ -154,8 +155,12 @@ def _settings_action(run: Run) -> Action:
 
 
 def _read_hook_source(filename: str) -> str:
-    source = Path(__file__).resolve().parent.parent / "hooks" / filename
-    return source.read_text(encoding="utf-8")
+    """Read one of the kit's standalone hook programs. Uses `importlib.resources` (like
+    `texts.loader.read`) rather than `Path(__file__)`, since the latter raises when the package
+    is running from inside the zipapp bundle.
+    """
+    resource = importlib.resources.files("six_laws_kit.hooks").joinpath(filename)
+    return resource.read_text(encoding="utf-8")
 
 
 def _copy_hook_action(target: Path, payload: str) -> Action:

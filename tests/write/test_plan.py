@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 from six_laws_kit.run_state import Run, Tree
 from six_laws_kit.write import blocks, plan
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+_FIXTURES_DIR = _REPO_ROOT / "fixtures"
 
 _TEXTS = {
     "SIX_LAWS.md": "law text\n",
@@ -157,3 +164,38 @@ def test_render_text_reports_kept_existing_and_diffs(forest_home: Path):
     text = plan.render_text(actions)
     assert "create_file:" in text
     assert "---" in text or "+++" in text
+
+
+def _load_bundle_module():
+    spec = importlib.util.spec_from_file_location("bundle_for_test_plan", _REPO_ROOT / "tools" / "bundle.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_zipapp_dry_run_with_routing_lists_the_hook_files(forest_home: Path, tmp_path: Path):
+    """Regression test: `_read_hook_source` used to join `Path(__file__).parent.parent / "hooks"`,
+    which raises `NotADirectoryError` once the package runs from inside the zipapp bundle. Building
+    the real archive and running it with routing on (the default) proves the `importlib.resources`
+    fix works from inside a zip, not just from the source tree.
+    """
+    bundle = _load_bundle_module()
+    archive = bundle.build(tmp_path / "dist")
+    env = dict(os.environ)
+    env["HOME"] = str(forest_home)
+    env["PATH"] = f"{_FIXTURES_DIR / 'claude_fake'}{os.pathsep}{env.get('PATH', '')}"
+    env["KIT_SKIP_AUTH"] = "1"
+    env["KIT_FAKE_MODE"] = "ok"
+
+    result = subprocess.run(
+        [sys.executable, str(archive), "--dry-run", "--no-browser", "--root", str(forest_home)],
+        env=env,
+        input="all\n",
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert result.returncode == 0, result.stderr
+    for hook_name in ("packet_reminder.py", "labor_tally.py", "load_cap.py"):
+        assert hook_name in result.stdout, result.stdout
