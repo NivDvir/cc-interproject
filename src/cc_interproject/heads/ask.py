@@ -89,17 +89,27 @@ def _first_balanced_object(text: str) -> str | None:
     return None
 
 
+def _normalized_name(fields: dict[str, object], tree: Tree) -> str:
+    """The head's own `name` answer, stripped, else `tree.name` when it is empty or NOT STATED.
+
+    A registry row must always carry a usable name, so this never returns NOT STATED itself.
+    """
+    name = str(fields.get("name") or "").strip()
+    if not name or name.upper() == "NOT STATED":
+        return tree.name
+    return name
+
+
 def _row_from_fields(fields: dict[str, object] | None, tree: Tree, elapsed: float) -> Row:
     if not isinstance(fields, dict):
         return fallback.row_from_claude_md(tree.claude_md, elapsed, "fallback")
-    name = str(fields.get("name") or "").strip()
     owns = str(fields.get("owns") or "").strip()
-    if not name or not owns:
+    if not owns:
         return fallback.row_from_claude_md(tree.claude_md, elapsed, "fallback")
     watch = str(fields.get("asks_others_to_watch_for") or "").strip() or "NOT STATED"
     contact = str(fields.get("contact_subject") or "").strip() or "NOT STATED"
     return Row(
-        name=name,
+        name=_normalized_name(fields, tree),
         owns=owns,
         asks_others_to_watch_for=watch,
         contact_subject=contact,

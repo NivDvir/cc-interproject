@@ -57,6 +57,15 @@ def test_parse_row_unparsable():
     assert ask.parse_row("not json at all") is None
 
 
+def test_row_from_fields_falls_back_to_tree_name_when_name_not_stated():
+    envelope = '{"structured_output": {"name": "NOT STATED", "owns": "the api gateway"}}'
+    fields = ask.parse_row(envelope)
+    tree = Tree(path=Path("/tmp/api"), name="api", claude_md=Path("/tmp/api/CLAUDE.md"))
+    row = ask._row_from_fields(fields, tree, 1.0)
+    assert row.name == "api"
+    assert row.written_by == "self"
+
+
 def test_ask_one_ok(fake_claude_on_path):
     tree = _alpha_tree()
     row = ask.ask_one("claude", tree, json_schema=True, timeout=30)
