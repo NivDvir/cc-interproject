@@ -16,7 +16,7 @@ HOOKS_SUBDIR = "hooks/six-laws"
 STATE_SUBDIR = "six-laws-state"
 BACKUPS_SUBDIR = "six-laws-backups"
 
-_POSIX_SKIP_NAMES = {
+_BASE_SKIP_NAMES = {
     ".git",
     "node_modules",
     "venv",
@@ -30,6 +30,18 @@ _POSIX_SKIP_NAMES = {
     "Pictures",
     "Movies",
     "Music",
+    ".claude",
+    ".build",
+    "worktrees",
+    "checkouts",
+    "dist",
+    "build",
+    "target",
+    ".tox",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    "site-packages",
 }
 _WINDOWS_EXTRA_SKIP_NAMES = {"AppData", "OneDrive", "$Recycle.Bin"}
 
@@ -38,8 +50,14 @@ _ENCODE_KEEP_UNDERSCORE = re.compile(r"[^A-Za-z0-9_-]")
 
 
 def skip_names() -> set[str]:
-    """Return the directory names the forest walk never enters, for the current OS."""
-    names = set(_POSIX_SKIP_NAMES)
+    """Return the directory names the forest walk never enters, for the current OS.
+
+    These are exact directory names, matched by name only — never a glob or pattern. `.claude`
+    is included so the walk never descends into Claude Code's own state (worktree checkouts,
+    hooks, session transcripts) when it scans `$HOME`; the kit's own fixtures use `dot-claude` as
+    a stand-in for exactly this reason.
+    """
+    names = set(_BASE_SKIP_NAMES)
     if sys.platform.startswith("win"):
         names |= _WINDOWS_EXTRA_SKIP_NAMES
     return names

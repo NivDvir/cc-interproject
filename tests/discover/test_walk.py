@@ -74,6 +74,25 @@ def test_walk_calls_on_progress_every_200_dirs(tmp_path):
     assert seen == [200, 400, 451]
 
 
+def test_walk_skips_claude_worktrees_and_build_checkouts(tmp_path):
+    real_project = tmp_path / "x"
+    real_project.mkdir()
+    (real_project / "CLAUDE.md").write_text("# Real Project\n", encoding="utf-8")
+    worktree_project = tmp_path / "x" / ".claude" / "worktrees" / "w"
+    worktree_project.mkdir(parents=True)
+    (worktree_project / "CLAUDE.md").write_text("# Worktree Copy\n", encoding="utf-8")
+    build_checkout = tmp_path / "y" / ".build" / "checkouts" / "c"
+    build_checkout.mkdir(parents=True)
+    (build_checkout / "CLAUDE.md").write_text("# Build Checkout\n", encoding="utf-8")
+
+    claude_mds, _ = walk.find_projects(tmp_path, paths.skip_names(), on_progress=lambda _n: None)
+
+    found = {p.parent for p in claude_mds}
+    assert real_project in found
+    assert worktree_project not in found
+    assert build_checkout not in found
+
+
 def test_walk_final_progress_call_reports_exact_total(forest_home):
     skip = paths.skip_names()
     seen: list[int] = []
