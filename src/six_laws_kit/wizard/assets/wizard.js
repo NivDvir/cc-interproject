@@ -4,7 +4,6 @@
 var STEPS = ["welcome", "scan", "modules", "heads", "review", "install", "done"];
 var state = { dryRun: false, sameHooks: [], trees: [], skippedRoots: [] };
 var headsStart = {}; // path -> ms timestamp, for a client-side elapsed clock
-
 function showStep(name) {
   STEPS.forEach(function (s) {
     var section = document.querySelector('section[data-step="' + s + '"]');
@@ -34,7 +33,6 @@ function kitFetch(path, opts) {
     return r.json().catch(function () { return {}; });
   });
 }
-
 var api = {
   state: function () { return kitFetch("/api/state"); },
   scanStart: function () { return kitFetch("/api/scan", { method: "POST" }); },
@@ -74,7 +72,6 @@ document.getElementById("btn-start").addEventListener("click", function () {
     poll(api.scanProgress, 400, function (p) { return p.done; }, onScanTick);
   });
 });
-
 function onScanTick(p) {
   var counter = document.getElementById("scan-counter");
   state.skippedRoots = p.skipped_roots || [];
@@ -82,7 +79,7 @@ function onScanTick(p) {
     counter.textContent = "Scanning\u2026 " + (p.dirs_seen || 0) + " directories checked.";
     return;
   }
-  counter.textContent = "Scan complete: " + (p.dirs_seen || 0) + " directories checked.";
+  counter.textContent = p.dirs_seen ? "Scan complete: " + p.dirs_seen + " directories checked." : "Scan complete.";
   api.state().then(function (s) {
     state.dryRun = !!s.dry_run;
     state.trees = s.trees || [];
@@ -92,25 +89,28 @@ function onScanTick(p) {
     document.getElementById("btn-scan-next").disabled = state.trees.length === 0;
   });
 }
-
 function renderForest(trees) {
   var root = document.getElementById("tree-root");
   root.innerHTML = "";
   trees.forEach(function (tree) { root.appendChild(renderTreeItem(tree, true)); });
 }
-
+var treeIdSeq = 0;
 function renderTreeItem(tree, isTop) {
   var li = document.createElement("li");
   if (!isTop) li.className = "inherited";
   var label = document.createElement("label");
+  var nameId = "tree-name-" + treeIdSeq++;
   if (isTop) {
     var box = document.createElement("input");
     box.type = "checkbox";
+    box.id = "tree-cb-" + nameId;
     box.checked = true;
     box.dataset.path = tree.path;
+    box.setAttribute("aria-labelledby", nameId);
     label.appendChild(box);
   }
   var name = document.createElement("span");
+  name.id = nameId;
   name.className = "tree-name";
   name.textContent = tree.name;
   label.appendChild(name);
@@ -126,7 +126,6 @@ function renderTreeItem(tree, isTop) {
   }
   return li;
 }
-
 function renderSkipped(roots) {
   var wrap = document.getElementById("skipped-wrap");
   var list = document.getElementById("skipped-list");
@@ -146,9 +145,7 @@ document.getElementById("btn-scan-next").addEventListener("click", function () {
     document.querySelectorAll("#tree-root input[type=checkbox]:checked"),
     function (el) { return el.dataset.path; }
   );
-  api.setSelection(selected).then(function () {
-    return api.state();
-  }).then(function (s) {
+  api.setSelection(selected).then(function () { return api.state(); }).then(function (s) {
     state.sameHooks = s.same_purpose_hooks || [];
     var routing = document.getElementById("mod-routing");
     var note = document.getElementById("modules-conflict-note");
@@ -169,36 +166,50 @@ document.getElementById("btn-modules-next").addEventListener("click", function (
   if (document.getElementById("mod-routing").checked) modules.push("routing");
   api.setModules(modules).then(function () {
     showStep("heads");
-    renderHeadsRows(state.trees.filter(function (t) {
+    var selectedTop = state.trees.filter(function (t) {
       return document.querySelector('#tree-root input[data-path="' + cssEscape(t.path) + '"]:checked');
-    }));
+    });
+    renderHeadsRows(flattenTrees(selectedTop, 0, null));
     api.headsStart().then(function () {
       poll(api.headsProgress, 700, function (p) { return p.done; }, onHeadsTick);
     });
   });
 });
-
 function cssEscape(s) { return s.replace(/["\\]/g, "\\$&"); }
 
-function renderHeadsRows(trees) {
+/* Flattens selected trees plus their inherited subtrees into row descriptors,
+   so every project the server asks about (GET /api/heads) has a table row. */
+function flattenTrees(trees, depth, parentName) {
+  var rows = [];
+  trees.forEach(function (t) {
+    rows.push({ path: t.path, name: t.name, depth: depth, parent: parentName });
+    if (t.subtrees && t.subtrees.length) rows = rows.concat(flattenTrees(t.subtrees, depth + 1, t.name));
+  });
+  return rows;
+}
+function headsRow(r) {
+  headsStart[r.path] = Date.now();
+  var tr = document.createElement("tr");
+  tr.dataset.path = r.path;
+  var nameHtml = r.name + (r.parent ? ' <span class="tree-date">(subtree of ' + r.parent + ")</span>" : "");
+  tr.innerHTML =
+    '<td style="padding-left:' + (12 + r.depth * 16) + 'px">' + nameHtml + '</td>' +
+    '<td><span class="badge badge-waiting" data-role="badge">waiting</span></td>' +
+    '<td data-role="elapsed">0.0s</td>';
+  return tr;
+}
+function renderHeadsRows(rows) {
   var body = document.getElementById("heads-tbody");
   body.innerHTML = "";
-  trees.forEach(function (t) {
-    headsStart[t.path] = Date.now();
-    var tr = document.createElement("tr");
-    tr.dataset.path = t.path;
-    tr.innerHTML =
-      '<td>' + t.name + '</td>' +
-      '<td><span class="badge badge-waiting" data-role="badge">waiting</span></td>' +
-      '<td data-role="elapsed">0.0s</td>';
-    body.appendChild(tr);
-  });
+  rows.forEach(function (r) { body.appendChild(headsRow(r)); });
 }
-
 function onHeadsTick(p) {
   (p.results || []).forEach(function (row) {
     var tr = document.querySelector('#heads-tbody tr[data-path="' + cssEscape(row.path) + '"]');
-    if (!tr) return;
+    if (!tr) {
+      tr = headsRow({ path: row.path, name: row.path.split("/").pop() || row.path, depth: 0, parent: null });
+      document.getElementById("heads-tbody").appendChild(tr);
+    }
     var badge = tr.querySelector('[data-role="badge"]');
     badge.textContent = row.status;
     badge.className = "badge badge-" + row.status;
@@ -214,7 +225,6 @@ document.getElementById("btn-heads-next").addEventListener("click", function () 
   showStep("review");
   api.plan().then(renderReview);
 });
-
 function renderReview(data) {
   var warnings = document.getElementById("review-warnings");
   warnings.innerHTML = "";
@@ -247,7 +257,6 @@ function renderReview(data) {
     list.appendChild(li);
   });
 }
-
 function renderDiff(text) {
   return text.split("\n").map(function (line) {
     var escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -271,7 +280,6 @@ document.getElementById("btn-confirm").addEventListener("click", function () {
     poll(api.installProgress, 300, function (p) { return p.done; }, onInstallTick);
   });
 });
-
 function onInstallTick(p) {
   var total = p.total || 1;
   var completed = p.completed || 0;
@@ -282,7 +290,6 @@ function onInstallTick(p) {
     showStep("done");
   }
 }
-
 document.getElementById("btn-install-close").addEventListener("click", function () {
   api.quit();
 });
@@ -295,7 +302,6 @@ function renderDone(d) {
   document.getElementById("paste-text").value = d.paste_block || "";
   document.getElementById("uninstall-cmd").textContent = d.uninstall_cmd || "";
 }
-
 document.getElementById("btn-copy").addEventListener("click", function () {
   var text = document.getElementById("paste-text").value;
   var status = document.getElementById("copy-status");
@@ -306,14 +312,12 @@ document.getElementById("btn-copy").addEventListener("click", function () {
     fallbackCopy(text, mark);
   }
 });
-
 function fallbackCopy(text, done) {
   var ta = document.getElementById("paste-text");
   ta.focus();
   ta.select();
   try { document.execCommand("copy"); done(); } catch (e) { /* clipboard unavailable; text stays selected */ }
 }
-
 document.getElementById("btn-close").addEventListener("click", function () {
   api.quit();
 });
@@ -324,5 +328,4 @@ window.addEventListener("pagehide", function () {
   var body = new Blob([JSON.stringify({ token: window.KIT_TOKEN })], { type: "application/json" });
   navigator.sendBeacon("/api/quit", body);
 });
-
 showStep("welcome");

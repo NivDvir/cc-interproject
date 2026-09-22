@@ -69,4 +69,28 @@ def test_walk_calls_on_progress_every_200_dirs(tmp_path):
 
     walk.find_projects(tmp_path, set(), on_progress=seen.append)
 
-    assert seen == [200, 400]
+    # root (1) + 450 children = 451 directories visited; the interval calls fire at 200 and 400,
+    # then one final unconditional call reports the exact total.
+    assert seen == [200, 400, 451]
+
+
+def test_walk_final_progress_call_reports_exact_total(forest_home):
+    skip = paths.skip_names()
+    seen: list[int] = []
+
+    walk.find_projects(forest_home, skip, on_progress=seen.append)
+
+    assert seen[-1] > 0
+    assert seen[-1] == _count_dirs_honoring_skip(forest_home, skip)
+
+
+def _count_dirs_honoring_skip(root: Path, skip: set[str]) -> int:
+    """Independently count the directories `find_projects` should visit: `root` itself plus
+    every descendant not pruned by `skip`, mirroring its skip-at-every-level rule without
+    reusing its internals.
+    """
+    count = 0
+    for _dirpath, dirnames, _filenames in os.walk(root):
+        count += 1
+        dirnames[:] = [name for name in dirnames if name not in skip]
+    return count

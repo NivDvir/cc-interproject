@@ -98,11 +98,11 @@ def test_execute_writes_the_manifest_so_far_and_reraises_on_os_error(
     original_write_atomic = apply._write_atomic
     calls = {"n": 0}
 
-    def _flaky_write(target: Path, text: str) -> None:
+    def _flaky_write(target: Path, text: str, manifest: dict) -> None:
         calls["n"] += 1
         if calls["n"] == 2:
             raise OSError("disk full")  # noqa: TRY003
-        original_write_atomic(target, text)
+        original_write_atomic(target, text, manifest)
 
     monkeypatch.setattr(apply, "_write_atomic", _flaky_write)
     with pytest.raises(OSError):

@@ -56,12 +56,12 @@ def _apply_action(run: Run, action: Action, stamp: str, manifest: dict) -> None:
 def _apply_create_file(action: Action, manifest: dict) -> None:
     if action.existed:
         return
-    _write_atomic(action.target, action.payload)
+    _write_atomic(action.target, action.payload, manifest)
     record.add_entry(manifest, _created_file_entry(action.target))
 
 
 def _apply_copy_hook_file(action: Action, manifest: dict) -> None:
-    _write_atomic(action.target, action.payload)
+    _write_atomic(action.target, action.payload, manifest)
     if os.name != "nt":
         os.chmod(action.target, 0o755)
     record.add_entry(manifest, _created_file_entry(action.target))
@@ -69,11 +69,11 @@ def _apply_copy_hook_file(action: Action, manifest: dict) -> None:
 
 def _apply_append_line(run: Run, action: Action, stamp: str, manifest: dict) -> None:
     if not action.existed:
-        _write_atomic(action.target, action.payload)
+        _write_atomic(action.target, action.payload, manifest)
         record.add_entry(manifest, _created_file_entry(action.target))
         return
     backup_entry = _make_backup(run, action.target, stamp, record_entry=True)
-    _write_atomic(action.target, action.payload)
+    _write_atomic(action.target, action.payload, manifest)
     if backup_entry is not None:
         backup_entry["sha256_after"] = record.sha256(action.target)
         record.add_entry(manifest, backup_entry)
@@ -85,7 +85,7 @@ def _apply_insert_block(run: Run, action: Action, stamp: str, manifest: dict) ->
     existing_text = action.existing_text or ""
     _make_backup(run, action.target, stamp, record_entry=False)
     sha_before = _sha256_text(existing_text)
-    _write_atomic(action.target, action.payload)
+    _write_atomic(action.target, action.payload, manifest)
     leading_blank_added, trailing_newline_added = _insert_flags(existing_text)
     record.add_entry(
         manifest,
@@ -119,7 +119,7 @@ def _apply_merge_hooks(run: Run, action: Action, stamp: str, manifest: dict) -> 
     before_text = json.dumps(before, indent=2) + "\n" if before else "{}\n"
     after, added = settings.merge_hooks(before, additions)
     after_text = json.dumps(after, indent=2) + "\n"
-    _write_atomic(action.target, after_text)
+    _write_atomic(action.target, after_text, manifest)
     record.add_entry(
         manifest,
         {
@@ -170,12 +170,25 @@ def _sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def _write_atomic(target: Path, text: str) -> None:
-    target.parent.mkdir(parents=True, exist_ok=True)
+def _write_atomic(target: Path, text: str, manifest: dict) -> None:
+    _ensure_dir_tracked(target.parent, manifest)
     tmp = target.with_name(target.name + ".tmp")
     with tmp.open("w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
     os.replace(tmp, target)
+
+
+def _ensure_dir_tracked(directory: Path, manifest: dict) -> None:
+    """Create `directory` (and any missing parent) one level at a time, recording a
+    `created_dir` entry for every directory that did not already exist, so uninstall can remove
+    exactly those again, deepest first, when empty.
+    """
+    if directory.exists() or directory == directory.parent:
+        return
+    _ensure_dir_tracked(directory.parent, manifest)
+    if not directory.exists():
+        directory.mkdir()
+        record.add_entry(manifest, {"kind": "created_dir", "path": str(directory)})
 
 
 def _stamp() -> str:
