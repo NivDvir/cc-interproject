@@ -49,7 +49,12 @@ def build(output_dir: Path) -> Path:
             target=archive_path,
             interpreter="/usr/bin/env python3",
             main="six_laws_kit.cli:main",
-            compressed=True,
+            # Uncompressed (ZIP_STORED): DEFLATE output is not guaranteed byte-identical across
+            # zlib builds/versions, which would make the committed archive's hash depend on which
+            # machine built it. Stored bytes are copied verbatim, so the archive hashes the same
+            # on every OS and Python build, which --check (and the committed dist/install.py)
+            # depend on.
+            compressed=False,
         )
     _normalize_archive_timestamps(archive_path)
     (output_dir / SUMS_NAME).write_text(f"{_sha256(archive_path)}  {ARCHIVE_NAME}\n", encoding="utf-8")
@@ -69,11 +74,17 @@ def _normalize_archive_timestamps(archive_path: Path) -> None:
     prefix = archive_path.read_bytes()[:shebang_len]
     with zipfile.ZipFile(archive_path) as source:
         entries = [(info, source.read(info)) for info in source.infolist()]
+    # Sort by filename: zipapp's own member order comes from `Path.rglob`, which (like plain
+    # `os.scandir`) is free to return entries in whatever order the OS/filesystem hands them
+    # back, not necessarily sorted and not necessarily the same across two runs or two hosts.
+    # A fixed member order, on top of the fixed timestamp below, is what makes the final byte
+    # layout - and hence the sha256 --check compares - independent of the machine that built it.
+    entries.sort(key=lambda pair: pair[0].filename)
     mode = archive_path.stat().st_mode
     with tempfile.NamedTemporaryFile(dir=archive_path.parent, delete=False) as tmp:
         tmp_path = Path(tmp.name)
         tmp.write(prefix)
-    with zipfile.ZipFile(tmp_path, "a", compression=zipfile.ZIP_DEFLATED) as target:
+    with zipfile.ZipFile(tmp_path, "a", compression=zipfile.ZIP_STORED) as target:
         for info, data in entries:
             info.date_time = date_time
             target.writestr(info, data)
