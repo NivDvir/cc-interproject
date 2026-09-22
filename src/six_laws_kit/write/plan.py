@@ -1,22 +1,18 @@
-"""`build(run)` walks the modules a `Run` wants installed and produces the ordered list of
-`Action`s the Review step shows and `apply.execute` performs. Pure: reads disk to see what already
-exists, writes nothing, computes every diff in memory. `render_text` prints the plan for
-`--dry-run` and the terminal UI.
+"""`build(run)` produces the ordered list of `Action`s the Review step shows and `apply.execute`
+performs. Pure: reads disk to see what already exists, writes nothing, computes every diff in
+memory. `render_text` prints the plan for `--dry-run` and the terminal UI.
 """
 
 from __future__ import annotations
 
 import difflib
-import json
 from pathlib import Path
 
-from six_laws_kit import paths
 from six_laws_kit.run_state import Action, Run, Tree, selected_trees
 from six_laws_kit.texts import loader
-from six_laws_kit.write import blocks, registry, settings
+from six_laws_kit.write import blocks, registry
 
 LAW_FILES = ("SIX_LAWS.md", "INTERPROJECT_PROTOCOL.md", "PRIOR_ART.md", "DISPATCHER_QUEUE.md")
-HOOK_SCRIPTS = ("packet_reminder.py", "labor_tally.py", "load_cap.py")
 REGISTRY_MARKER = "registry"
 POINTER_MARKER = "project-pointer"
 MARKER_VERSION = 1
@@ -31,8 +27,6 @@ def build(run: Run) -> list[Action]:
     if account_action is not None:
         actions.append(account_action)
     actions.extend(_project_pointer_actions(run))
-    if "routing" in run.modules:
-        actions.extend(_routing_actions(run))
     run.plan = actions
     return actions
 
@@ -131,53 +125,6 @@ def _pointer_action_for_tree(tree: Tree, body: str) -> Action | None:
         marker_id=POINTER_MARKER,
         payload=new_text,
         existing_text=existing_text if existed else None,
-        diff=diff,
-        existed=existed,
-    )
-
-
-def _routing_actions(run: Run) -> list[Action]:
-    hooks_dir = paths.hooks_dir(run.claude_dir)
-    actions = [_copy_hook_action(hooks_dir / name, _read_hook_source(name)) for name in HOOK_SCRIPTS]
-    actions.append(_copy_hook_action(hooks_dir / "PACKET_REMINDER.md", loader.read("PACKET_REMINDER.md")))
-    actions.append(_settings_action(run))
-    return actions
-
-
-def _settings_action(run: Run) -> Action:
-    target = run.claude_dir / "settings.json"
-    additions = settings.hook_additions(paths.hook_interpreter(), paths.hooks_dir(run.claude_dir))
-    before_text, after_text = settings.preview(target, additions)
-    diff = _unified_diff(before_text, after_text, target)
-    return Action(
-        kind="merge_hooks",
-        target=target,
-        marker_id=None,
-        payload=json.dumps(additions),
-        existing_text=before_text if target.exists() else None,
-        diff=diff,
-        existed=target.exists(),
-    )
-
-
-def _read_hook_source(filename: str) -> str:
-    """Read one of the kit's standalone hook programs, via `paths.read_package_resource` (like
-    `texts.loader.read`) rather than `Path(__file__)`, since the latter raises when the package
-    is running from inside the zipapp bundle.
-    """
-    return paths.read_package_resource("six_laws_kit.hooks", filename)
-
-
-def _copy_hook_action(target: Path, payload: str) -> Action:
-    existed = target.exists()
-    existing_text = _read_existing(target) if existed else None
-    diff = _unified_diff(existing_text or "", payload, target)
-    return Action(
-        kind="copy_hook_file",
-        target=target,
-        marker_id=None,
-        payload=payload,
-        existing_text=existing_text,
         diff=diff,
         existed=existed,
     )

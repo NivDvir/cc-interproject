@@ -17,10 +17,6 @@ Output of `python3 --version`.
 
 Paste the full output.
 
-**Was the routing module on?**
-
-Yes / no.
-
 **What happened**
 
 **What you expected**

@@ -1,5 +1,5 @@
 """The whole wizard flow over HTTP against a real server and the fake `claude` binary: state,
-scan, selection, modules, heads, plan, install, done, quit — plus the dry-run refusal.
+scan, selection, heads, plan, install, done, quit — plus the dry-run refusal.
 """
 
 from __future__ import annotations
@@ -92,10 +92,6 @@ def test_full_flow_installs_and_reports(serving, forest_home):
     assert status == 200
     # alpha/sub inherits alpha's selection (discover.forest.apply_selection), so three are chosen.
     assert selection["selected"] == 3
-
-    status, modules = call(httpd, run, "/api/modules", method="POST", body={"modules": ["laws", "routing"]})
-    assert status == 200
-    assert modules["modules"] == ["laws", "routing"]
 
     assert call(httpd, run, "/api/heads", method="POST")[0] == 202
     heads = poll_until_done(httpd, run, "/api/heads")

@@ -41,7 +41,7 @@ def test_install_flow_selects_two_projects_and_writes_the_manifest(
     # each numbered pick becomes exactly one self-written head; "1" would also cascade to
     # alpha's own subtree (alpha/sub), which is a separate, correct addressable project of its
     # own and is covered instead by test_walk_finds_every_top_level_and_nested_project.
-    _scripted_input(monkeypatch, ["2 3", "", "y"])
+    _scripted_input(monkeypatch, ["2 3", "y"])
 
     code = terminal.run(run)
 

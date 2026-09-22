@@ -11,8 +11,6 @@ from pathlib import Path
 
 from six_laws_kit import paths
 
-DEFAULT_MODULES = {"laws", "routing"}
-
 
 @dataclass
 class Tree:
@@ -58,7 +56,6 @@ class Run:
     claude_caps: dict[str, bool] = field(default_factory=dict)
     auth_ok: bool = False
     trees: list[Tree] = field(default_factory=list)
-    modules: set[str] = field(default_factory=lambda: set(DEFAULT_MODULES))
     rows: dict[str, Row] = field(default_factory=dict)
     ask_progress: dict[str, str] = field(default_factory=dict)
     scan_progress: dict[str, object] = field(default_factory=dict)
@@ -89,7 +86,6 @@ def new_run(args: argparse.Namespace) -> Run:
         claude_dir=claude_dir,
         root=root,
         no_browser=bool(getattr(args, "no_browser", False)),
-        modules=_parse_modules(getattr(args, "modules", None)),
     )
 
 
@@ -101,13 +97,6 @@ def _resolve_mode(args: argparse.Namespace) -> str:
     if getattr(args, "dry_run", False):
         return "dry-run"
     return "install"
-
-
-def _parse_modules(raw: str | None) -> set[str]:
-    if not raw:
-        return set(DEFAULT_MODULES)
-    parsed = {part.strip() for part in raw.split(",") if part.strip()}
-    return parsed or set(DEFAULT_MODULES)
 
 
 def selected_trees(run: Run) -> list[Tree]:

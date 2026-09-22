@@ -1,5 +1,5 @@
-"""Tests for run_state.py: new_run's home/root/claude_dir resolution and module parsing, and
-selected_trees's flattening.
+"""Tests for run_state.py: new_run's home/root/claude_dir resolution, and selected_trees's
+flattening.
 """
 
 from __future__ import annotations
@@ -18,7 +18,6 @@ def _args(**overrides):
         "status": False,
         "no_browser": False,
         "root": None,
-        "modules": None,
     }
     defaults.update(overrides)
     return argparse.Namespace(**defaults)
@@ -35,7 +34,6 @@ def test_new_run_defaults_to_home_and_dot_claude(monkeypatch, tmp_path):
     assert run.root == fake_home
     assert run.claude_dir == fake_home / ".claude"
     assert run.mode == "install"
-    assert run.modules == {"laws", "routing"}
 
 
 def test_new_run_with_root_uses_dot_claude_subdir(monkeypatch, tmp_path):
@@ -55,11 +53,6 @@ def test_new_run_mode_flags():
     assert run_state.new_run(_args(dry_run=True)).mode == "dry-run"
     assert run_state.new_run(_args(uninstall=True)).mode == "uninstall"
     assert run_state.new_run(_args(status=True)).mode == "status"
-
-
-def test_new_run_parses_comma_separated_modules():
-    run = run_state.new_run(_args(modules="laws, extra"))
-    assert run.modules == {"laws", "extra"}
 
 
 def test_selected_trees_flattens_in_tree_order():

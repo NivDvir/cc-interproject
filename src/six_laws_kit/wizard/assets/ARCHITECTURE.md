@@ -12,10 +12,9 @@ then sends that token back as header `X-Kit-Token` on every `/api/*` call, and (
 Contract with the server: these five files are the entire page. No build step, no bundler, no
 external network resource (fonts, CDNs) — system font stack only. `wizard.js` talks to the HTTP
 API exactly as listed in `docs/INTERFACES.md`; it never assumes a field the server does not
-document. Two fields are inferred rather than stated verbatim in `INTERFACES.md` and are called
-out here: `GET /api/state` is assumed to carry `dry_run`, `trees` (nested `Tree` records) and
-`same_purpose_hooks`, since Modules and Scan need that data from somewhere and no other endpoint
-carries it.
+document. One field is inferred rather than stated verbatim in `INTERFACES.md` and is called out
+here: `GET /api/state` is assumed to carry `dry_run` alongside `trees` (nested `Tree` records),
+since the Scan step needs that data from somewhere and no other endpoint carries it.
 
 Per **STYLE.md**, none of this is ever embedded as a Python string; `write/` and `wizard/server.py`
 only read these files from disk.

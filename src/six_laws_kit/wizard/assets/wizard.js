@@ -1,8 +1,8 @@
 "use strict";
 
 /* Step machine ------------------------------------------------------- */
-var STEPS = ["welcome", "scan", "modules", "heads", "review", "install", "done"];
-var state = { dryRun: false, sameHooks: [], trees: [], skippedRoots: [] };
+var STEPS = ["welcome", "scan", "heads", "review", "install", "done"];
+var state = { dryRun: false, trees: [], skippedRoots: [] };
 var headsStart = {}; // path -> ms timestamp, for a client-side elapsed clock
 function showStep(name) {
   STEPS.forEach(function (s) {
@@ -39,9 +39,6 @@ var api = {
   scanProgress: function () { return kitFetch("/api/scan"); },
   setSelection: function (selected) {
     return kitFetch("/api/selection", { method: "POST", body: { selected: selected } });
-  },
-  setModules: function (modules) {
-    return kitFetch("/api/modules", { method: "POST", body: { modules: modules } });
   },
   headsStart: function () { return kitFetch("/api/heads", { method: "POST" }); },
   headsProgress: function () { return kitFetch("/api/heads"); },
@@ -139,32 +136,13 @@ function renderSkipped(roots) {
   wrap.hidden = false;
 }
 
-/* Scan -> Modules -------------------------------------------------------- */
+/* Scan -> Heads -------------------------------------------------------- */
 document.getElementById("btn-scan-next").addEventListener("click", function () {
   var selected = Array.prototype.map.call(
     document.querySelectorAll("#tree-root input[type=checkbox]:checked"),
     function (el) { return el.dataset.path; }
   );
-  api.setSelection(selected).then(function () { return api.state(); }).then(function (s) {
-    state.sameHooks = s.same_purpose_hooks || [];
-    var routing = document.getElementById("mod-routing");
-    var note = document.getElementById("modules-conflict-note");
-    if (state.sameHooks.length) {
-      routing.checked = false;
-      note.hidden = false;
-      note.textContent = "Routing hooks already present: " + state.sameHooks.join(", ") + ". Left unchecked.";
-    } else {
-      note.hidden = true;
-    }
-    showStep("modules");
-  });
-});
-
-/* Modules -> Heads --------------------------------------------------------- */
-document.getElementById("btn-modules-next").addEventListener("click", function () {
-  var modules = ["laws"];
-  if (document.getElementById("mod-routing").checked) modules.push("routing");
-  api.setModules(modules).then(function () {
+  api.setSelection(selected).then(function () {
     showStep("heads");
     var selectedTop = state.trees.filter(function (t) {
       return document.querySelector('#tree-root input[data-path="' + cssEscape(t.path) + '"]:checked');

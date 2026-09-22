@@ -10,11 +10,8 @@ Under `~/.claude`, it can create or update:
 - `SIX_LAWS.md`, `PROJECT_REGISTRY.md`, `INTERPROJECT_PROTOCOL.md`, `PRIOR_ART.md`,
   `DISPATCHER_QUEUE.md`
 - one pointer line appended to `~/.claude/CLAUDE.md`
-- hooks under `~/.claude/hooks/six-laws/`
-- state files under `~/.claude/six-laws-state/`
 - backups under `~/.claude/six-laws-backups/`
 - a manifest, `~/.claude/six-laws.manifest.json`
-- an optional merge into `~/.claude/settings.json`, adding hook entries only
 
 For each project the user chooses, it appends one marked block to that project's own
 `CLAUDE.md`. It never edits any other part of a chosen project.

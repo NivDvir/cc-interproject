@@ -23,7 +23,7 @@ def find_projects(
     """Return `(claude_md_paths, skipped_roots)` found scanning below `root`.
 
     `skip` names are never entered, at any depth — including inside a directory that itself
-    holds a `CLAUDE.md`, so a discovered project's own `node_modules` or `.venv` is still
+    holds a `CLAUDE.md`, so a discovered project's own vendored or virtual-env directories are still
     skipped. `skipped_roots` only records the ones actually encountered at depth <= 2, so the
     caller can name a few without flooding the UI with every vendored directory buried deep in a
     tree. A symlink (or, on Windows, a reparse point) is never descended into, which is also what

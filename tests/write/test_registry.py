@@ -27,7 +27,7 @@ def test_row_uses_row_fields_when_present_and_escapes_pipes():
     alpha = _tree("/home/alpha", "Alpha")
     row = Row(
         name="Alpha",
-        owns="Ships | cargo routing",
+        owns="Ships | cargo handling",
         asks_others_to_watch_for="port closures",
         contact_subject="alpha",
         written_by="self",
@@ -35,7 +35,7 @@ def test_row_uses_row_fields_when_present_and_escapes_pipes():
     )
     text = registry.render({str(alpha.path): row}, [alpha], HEADER)
     data_line = [line for line in text.splitlines() if line.startswith("| Alpha")][0]
-    assert "Ships \\| cargo routing" in data_line
+    assert "Ships \\| cargo handling" in data_line
     assert "self" in data_line
     assert re.search(r"\d{4}-\d{2}-\d{2} \|$", data_line)
 

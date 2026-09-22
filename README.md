@@ -4,10 +4,9 @@ An installer that applies the six-law setup for running several Claude Code proj
 machine as a system, as described in the article "The Six Laws for Running Claude Code Projects
 as a System." It is for anyone running more than one Claude Code project on the same machine who
 wants those projects to follow a shared ownership and communication protocol. It writes the
-protocol files, lets each chosen project answer for itself, and can add an optional set of hooks
-that enforce a delegation-routing policy. It does not write the article's content for you, does
-not touch anything outside your home directory, and does not run automatically after install:
-you run it once, review what it will do, and confirm.
+protocol files and lets each chosen project answer for itself. It does not write the article's
+content for you, does not touch anything outside your home directory, and does not run
+automatically after install: you run it once, review what it will do, and confirm.
 
 ## What you get
 
@@ -17,25 +16,11 @@ Under `~/.claude`, the installer can create or update:
   `DISPATCHER_QUEUE.md`
 - one pointer line appended to `~/.claude/CLAUDE.md`
 - a manifest, `~/.claude/six-laws.manifest.json`, recording everything it wrote
-- (routing module) hooks under `~/.claude/hooks/six-laws/`, state files under
-  `~/.claude/six-laws-state/`, and an entry merge into `~/.claude/settings.json`
 - backups under `~/.claude/six-laws-backups/` of any file it changed
 
 For each project you choose, it appends one marked block to that project's own `CLAUDE.md`: a
 pointer to `~/.claude/SIX_LAWS.md`, and a note to rewrite its registry row in its own words on its
 next session if the row was written by the installer.
-
-The routing module is optional and off by default when it detects hooks that already serve the
-same purpose. It installs three standalone hook programs:
-
-- `packet_reminder.py` (`UserPromptSubmit`): reminds the session of last turn's tool-call tally.
-- `labor_tally.py` (`Stop`): records what the session did in the turn just finished.
-- `load_cap.py` (`PreToolUse`): counts direct context-loading tool calls in a turn and can deny
-  the seventh one if nothing was delegated.
-
-That last hook can deny a tool call. To turn it off, run `install.py --uninstall`, or open
-`~/.claude/settings.json` and remove the three hook entries whose commands run `packet_reminder.py`,
-`labor_tally.py`, and `load_cap.py`.
 
 ## Requirements
 
@@ -70,18 +55,17 @@ PYTHONPATH=src python3 -m six_laws_kit
 ## What happens
 
 The installer opens a local wizard (browser, or the terminal if no browser is available), with
-seven steps:
+six steps:
 
 1. **Welcome**: what the installer will do, and the cost note below.
 2. **Scan**: finds every Claude Code project under your home directory (or `--root`), shown as a
    tree with a checkbox per project; picking a project also picks its subtrees.
-3. **Modules**: choose `laws` (always installed) and the optional `routing` module.
-4. **Register heads**: for each chosen project, asks its own `CLAUDE.md` for a short registry
+3. **Register heads**: for each chosen project, asks its own `CLAUDE.md` for a short registry
    row, with live per-project progress.
-5. **Review**: shows the exact file diff for everything that would be written. Nothing is
+4. **Review**: shows the exact file diff for everything that would be written. Nothing is
    written yet.
-6. **Install**: writes the files you confirmed.
-7. **Done**: shows the one text block you still need to paste yourself, and the uninstall
+5. **Install**: writes the files you confirmed.
+6. **Done**: shows the one text block you still need to paste yourself, and the uninstall
    command.
 
 Cost note: registering heads makes one short `claude` call per chosen project, on your own
@@ -108,7 +92,6 @@ The Done step of the wizard gives you the exact text to paste there.
 - `--uninstall`: remove what a previous install wrote.
 - `--uninstall --restore-backups`: also restore any file the installer backed up.
 - `--no-browser`: skip the browser wizard and use the terminal instead.
-- `--modules laws`: install only the `laws` module (routing is on by default).
 - `--root DIR`: scan a directory other than your home directory (for testing).
 - `--version`: print the installed version.
 
@@ -126,8 +109,8 @@ Exit codes:
 ## Uninstall
 
 `--uninstall` reads `~/.claude/six-laws.manifest.json` and undoes exactly what it lists: it
-deletes files the installer created, strips the marked blocks it inserted, and removes the hook
-entries it added to `settings.json`. Backups it made along the way are left on disk under
+deletes files the installer created and strips the marked blocks it inserted. Backups it made
+along the way are left on disk under
 `~/.claude/six-laws-backups/` unless you pass `--restore-backups`; either way, the path is
 printed so you know where they are.
 

@@ -33,7 +33,6 @@ _ROUTES = {
     ("POST", "/api/scan"): lambda run, body: api.scan_start(run),
     ("GET", "/api/scan"): lambda run, body: api.scan_progress(run),
     ("POST", "/api/selection"): lambda run, body: api.set_selection(run, body.get("selected") or []),
-    ("POST", "/api/modules"): lambda run, body: api.set_modules(run, body.get("modules") or []),
     ("POST", "/api/heads"): lambda run, body: api.heads_start(run),
     ("GET", "/api/heads"): lambda run, body: api.heads_progress(run),
     ("GET", "/api/plan"): lambda run, body: api.plan(run),

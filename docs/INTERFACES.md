@@ -19,7 +19,7 @@ class Row:
 
 @dataclass
 class Action:
-    kind: str                  # "create_file" | "append_line" | "insert_block" | "merge_hooks" | "copy_hook_file"
+    kind: str                  # "create_file" | "append_line" | "insert_block"
     target: Path; marker_id: Optional[str]; payload: str
     existing_text: Optional[str]; diff: str; existed: bool
 
@@ -31,7 +31,6 @@ class Run:
     claude_caps: Dict[str, bool] = field(default_factory=dict)   # {"json_schema": bool}
     auth_ok: bool = False
     trees: List[Tree] = field(default_factory=list)
-    modules: Set[str] = field(default_factory=lambda: {"laws", "routing"})
     rows: Dict[str, Row] = field(default_factory=dict)            # key = str(tree.path)
     ask_progress: Dict[str, str] = field(default_factory=dict)    # waiting|asked|answered|fallback|timeout
     scan_progress: Dict[str, object] = field(default_factory=dict)  # {"done": bool, "dirs_seen": int, "skipped_roots": [...]}
@@ -47,19 +46,14 @@ def selected_trees(run: Run) -> List[Tree]          # flattened, selected only, 
 
 ## paths.py
 ```python
-KIT_NAME = "six-laws-kit"; MANIFEST_NAME = "six-laws.manifest.json"
-HOOKS_SUBDIR = "hooks/six-laws"; STATE_SUBDIR = "six-laws-state"; BACKUPS_SUBDIR = "six-laws-backups"
+KIT_NAME = "six-laws-kit"; MANIFEST_NAME = "six-laws.manifest.json"; BACKUPS_SUBDIR = "six-laws-backups"
 def skip_names() -> Set[str]                         # per-OS directory names never entered
 def home_dir() -> Path                               # $HOME override else Path.home() (Windows ignores HOME)
 def is_windows_shim(claude_bin: str) -> bool          # True if claude_bin resolves to a .cmd/.bat file
 def windows_shim_argv(command: List[str]) -> List[str]  # wraps command in cmd.exe /d /c when shimmed
 def manifest_path(claude_dir: Path) -> Path
-def hooks_dir(claude_dir: Path) -> Path
-def state_dir(claude_dir: Path) -> Path
 def backups_dir(claude_dir: Path, stamp: str) -> Path
 def encode_project_dir(path: Path) -> List[str]      # candidate ~/.claude/projects names, forward-encoded
-def hook_interpreter() -> List[str]                  # ["py","-3"] on Windows with launcher, else ["python3"]
-def hook_command(interpreter: List[str], script: Path) -> str   # 'python3 "/posix/path.py"'
 ```
 
 ## discover/
@@ -94,12 +88,6 @@ blocks.contains(text: str, marker_id: str) -> bool
 blocks.insert(text: str, block: str) -> Tuple[str, bool, bool]     # (new_text, leading_blank_added, trailing_newline_added)
 blocks.strip(text: str, marker_id: str) -> Tuple[str, bool]         # (new_text, found_exactly_once)
 registry.render(rows: Dict[str, Row], trees: List[Tree], header: str) -> str
-settings.load(path: Path) -> dict
-settings.merge_hooks(settings: dict, additions: List[dict]) -> Tuple[dict, List[dict]]  # (new, actually_added)
-settings.remove_hooks(settings: dict, commands: List[str]) -> dict
-settings.same_purpose_hooks(settings: dict) -> List[str]           # commands found
-settings.preview(path: Path, additions: List[dict]) -> Tuple[str, str]   # (before_text, after_text)
-settings.hook_additions(interpreter: List[str], hooks_dir: Path) -> List[dict]  # the 3 entries {event,matcher,command,timeout}
 plan.build(run: Run) -> List[Action]                # pure; reads disk, writes nothing; sets run.plan
 plan.render_text(actions: List[Action]) -> str      # for --dry-run and the terminal UI
 apply.execute(run: Run, on_progress: Callable[[str, int, int], None]) -> Path   # returns manifest path
@@ -130,7 +118,7 @@ launch.can_open_browser() -> bool
 server.make_server(run: Run) -> ThreadingHTTPServer     # bound 127.0.0.1:0
 server.render_page(token: str) -> str
 api.state(run) -> dict; api.scan_start(run) -> dict; api.scan_progress(run) -> dict
-api.set_selection(run, selected: List[str]) -> dict; api.set_modules(run, modules: List[str]) -> dict
+api.set_selection(run, selected: List[str]) -> dict
 api.heads_start(run) -> dict; api.heads_progress(run) -> dict
 api.plan(run) -> dict; api.install_start(run, confirm: bool) -> dict; api.install_progress(run) -> dict
 api.done(run) -> dict; api.quit(run) -> dict
@@ -138,7 +126,7 @@ terminal.run(run: Run) -> int          # same steps, numbered prompts on stdin
 ```
 HTTP table (all `/api/*` require header `X-Kit-Token`; JSON in/out; 403 on bad token/Origin/Host):
 GET `/?t=` page · GET `/api/state` · POST `/api/scan` → 202 · GET `/api/scan` · POST `/api/selection`
-{selected:[paths]} · POST `/api/modules` {modules:[...]} · POST `/api/heads` → 202 · GET `/api/heads`
+{selected:[paths]} · POST `/api/heads` → 202 · GET `/api/heads`
 {done, results:[{path,status,seconds,row?}]} · GET `/api/plan` {actions:[{kind,target,existed,diff,bytes}],
 warnings:[]} · POST `/api/install` {confirm:true} → 202 (409 if not confirmed or dry-run) ·
 GET `/api/install` · GET `/api/done` {paste_block, manifest_path, uninstall_cmd, self_rows, installer_rows}
@@ -146,16 +134,12 @@ GET `/api/install` · GET `/api/done` {paste_block, manifest_path, uninstall_cmd
 
 ## cli.py
 Exit codes: 0 ok · 2 bad arguments · 3 claude not found · 4 not logged in · 5 install error · 6 user aborted.
-Flags: `--dry-run` `--uninstall` `--restore-backups` `--status` `--no-browser` `--root <dir>` `--modules laws,routing` `--version`.
-
-## hooks/ (standalone programs; contract in DESIGN.md §6)
-Each: reads JSON from stdin, never raises, exits 0; state dir = `Path.home()/".claude"/"six-laws-state"`.
-`packet_reminder.py` looks for `PACKET_REMINDER.md` next to itself (copied there at install).
+Flags: `--dry-run` `--uninstall` `--restore-backups` `--status` `--no-browser` `--root <dir>` `--version`.
 
 ## Amendments (2026-09-22, from packet C — binding on the server)
-- `GET /api/state` returns `{step, mode, dry_run, home, claude_version, modules, trees, same_purpose_hooks}`
-  where `trees` is the nested Tree list (path, name, has_session, last_session, subtrees, selected)
-  once a scan has run (else `[]`), and `same_purpose_hooks` is the list from `write.settings.same_purpose_hooks`.
+- `GET /api/state` returns `{step, mode, dry_run, home, claude_version, trees}` where `trees` is the
+  nested Tree list (path, name, has_session, last_session, subtrees, selected) once a scan has run
+  (else `[]`).
 - `POST /api/quit` must accept the token EITHER in the `X-Kit-Token` header OR as `{"token": ...}` in
   the JSON body, because `navigator.sendBeacon` cannot set headers.
 - `POST /api/selection` receives only checked TOP-LEVEL tree paths; the server applies inheritance.

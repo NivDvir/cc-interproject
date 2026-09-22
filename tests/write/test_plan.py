@@ -23,7 +23,6 @@ _TEXTS = {
     "REGISTRY_HEADER.md": "# Project registry\n\nRead before any cross-project work.\n",
     "ACCOUNT_POINTER.md": "Read the six laws before any cross-project work.\n\n---\n\nmore prose here.\n",
     "PROJECT_POINTER.md": "Reach other projects only through their heads.\n",
-    "PACKET_REMINDER.md": "Packet reminder text.\n",
 }
 
 
@@ -32,15 +31,8 @@ def _fake_texts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("six_laws_kit.texts.loader.read", lambda name: _TEXTS[name])
 
 
-@pytest.fixture
-def _fake_hook_sources(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(plan, "_read_hook_source", lambda name: f"#!/usr/bin/env python3\n# fake {name}\n")
-
-
-def _make_run(home: Path, modules: set) -> Run:
-    run = Run(
-        mode="dry-run", home=home, claude_dir=home / "dot-claude", root=home, no_browser=True, modules=modules
-    )
+def _make_run(home: Path) -> Run:
+    run = Run(mode="dry-run", home=home, claude_dir=home / "dot-claude", root=home, no_browser=True)
     alpha = Tree(path=home / "alpha", name="Alpha", claude_md=home / "alpha" / "CLAUDE.md", selected=True)
     beta = Tree(path=home / "beta", name="Beta", claude_md=home / "beta" / "CLAUDE.md", selected=True)
     run.trees = [alpha, beta]
@@ -56,7 +48,7 @@ def _hash_tree(root: Path) -> dict:
 
 
 def test_build_writes_nothing_to_disk(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     before = _hash_tree(forest_home)
     plan.build(run)
     after = _hash_tree(forest_home)
@@ -64,7 +56,7 @@ def test_build_writes_nothing_to_disk(forest_home: Path):
 
 
 def test_build_creates_missing_law_files_and_the_registry(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     actions = plan.build(run)
     assert actions is run.plan
     created_names = {a.target.name for a in actions if a.kind == "create_file" and not a.existed}
@@ -82,7 +74,7 @@ def test_build_creates_missing_law_files_and_the_registry(forest_home: Path):
 
 def test_build_keeps_an_existing_law_file(forest_home: Path):
     (forest_home / "dot-claude" / "SIX_LAWS.md").write_text("already here\n", encoding="utf-8")
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     actions = plan.build(run)
     kept = [a for a in actions if a.kind == "create_file" and a.target.name == "SIX_LAWS.md"]
     assert len(kept) == 1
@@ -91,7 +83,7 @@ def test_build_keeps_an_existing_law_file(forest_home: Path):
 
 
 def test_build_appends_the_account_pointer_line_once(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     actions = plan.build(run)
     append_actions = [a for a in actions if a.kind == "append_line"]
     assert len(append_actions) == 1
@@ -100,13 +92,13 @@ def test_build_appends_the_account_pointer_line_once(forest_home: Path):
     assert "Read the six laws" in action.payload
 
     (forest_home / "dot-claude" / "CLAUDE.md").write_text(action.payload, encoding="utf-8")
-    run_again = _make_run(forest_home, {"laws"})
+    run_again = _make_run(forest_home)
     actions_again = plan.build(run_again)
     assert [a for a in actions_again if a.kind == "append_line"] == []
 
 
 def test_build_inserts_project_pointer_into_each_selected_tree(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     actions = plan.build(run)
     pointer_actions = [a for a in actions if a.kind == "insert_block" and a.marker_id == "project-pointer"]
     targets = {a.target for a in pointer_actions}
@@ -124,7 +116,7 @@ def test_build_skips_a_tree_that_already_has_the_pointer_block(forest_home: Path
     new_text, _leading, _trailing = blocks.insert(existing, block)
     alpha_md.write_text(new_text, encoding="utf-8")
 
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     actions = plan.build(run)
     pointer_targets = {
         a.target for a in actions if a.kind == "insert_block" and a.marker_id == "project-pointer"
@@ -133,33 +125,14 @@ def test_build_skips_a_tree_that_already_has_the_pointer_block(forest_home: Path
     assert forest_home / "beta" / "CLAUDE.md" in pointer_targets
 
 
-def test_build_without_routing_module_has_no_hook_actions(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
-    actions = plan.build(run)
-    assert [a for a in actions if a.kind in ("copy_hook_file", "merge_hooks")] == []
-
-
-def test_build_with_routing_module_copies_hooks_and_merges_settings(
-    forest_home: Path, _fake_hook_sources: None
-):
-    run = _make_run(forest_home, {"laws", "routing"})
-    actions = plan.build(run)
-    hook_actions = [a for a in actions if a.kind == "copy_hook_file"]
-    hook_names = {a.target.name for a in hook_actions}
-    assert hook_names == {"packet_reminder.py", "labor_tally.py", "load_cap.py", "PACKET_REMINDER.md"}
-    for action in hook_actions:
-        assert action.target.as_posix().endswith(f"hooks/six-laws/{action.target.name}")
-
-    merge_actions = [a for a in actions if a.kind == "merge_hooks"]
-    assert len(merge_actions) == 1
-    settings_action = merge_actions[0]
-    assert settings_action.target == forest_home / "dot-claude" / "settings.json"
-    assert settings_action.existed is True
-    assert "echo foreign" in settings_action.diff or "echo foreign" in (settings_action.existing_text or "")
+def test_build_plans_only_kinds_apply_knows(forest_home: Path):
+    run = _make_run(forest_home)
+    kinds = {action.kind for action in plan.build(run)}
+    assert kinds <= {"create_file", "append_line", "insert_block"}
 
 
 def test_render_text_reports_kept_existing_and_diffs(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     actions = plan.build(run)
     text = plan.render_text(actions)
     assert "create_file:" in text
@@ -173,11 +146,11 @@ def _load_bundle_module():
     return module
 
 
-def test_zipapp_dry_run_with_routing_lists_the_hook_files(forest_home: Path, tmp_path: Path):
-    """Regression test: `_read_hook_source` used to join `Path(__file__).parent.parent / "hooks"`,
-    which raises `NotADirectoryError` once the package runs from inside the zipapp bundle. Building
-    the real archive and running it with routing on (the default) proves the `importlib.resources`
-    fix works from inside a zip, not just from the source tree.
+def test_zipapp_dry_run_lists_the_law_files(forest_home: Path, tmp_path: Path):
+    """Regression test: a shipped text read with a raw `Path(__file__)` join raises
+    `NotADirectoryError` once the package runs from inside the zipapp bundle. Building the real
+    archive and running it proves `paths.read_package_resource` works from inside a zip, not just
+    from the source tree.
     """
     bundle = _load_bundle_module()
     archive = bundle.build(tmp_path / "dist")
@@ -197,5 +170,5 @@ def test_zipapp_dry_run_with_routing_lists_the_hook_files(forest_home: Path, tmp
     )
 
     assert result.returncode == 0, result.stderr
-    for hook_name in ("packet_reminder.py", "labor_tally.py", "load_cap.py"):
-        assert hook_name in result.stdout, result.stdout
+    for law_file in plan.LAW_FILES:
+        assert law_file in result.stdout, result.stdout

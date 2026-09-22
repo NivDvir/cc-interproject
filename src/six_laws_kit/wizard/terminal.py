@@ -1,5 +1,5 @@
-"""The no-browser install flow: the same seven steps the browser wizard walks through (Welcome,
-Scan, Modules, Heads, Review, Install, Done), driven on stdin/stdout instead of HTTP. Talks to the
+"""The no-browser install flow: the same six steps the browser wizard walks through (Welcome,
+Scan, Heads, Review, Install, Done), driven on stdin/stdout instead of HTTP. Talks to the
 running install only through `wizard.api`, the same surface the HTTP layer calls, and renders the
 Review step's diffs itself from `api.plan`'s plain-dict actions — the same way `wizard/assets/
 wizard.js` renders them for the browser, so no cross-category import is needed here.
@@ -30,7 +30,7 @@ RULER = "=" * 60
 
 
 def run(run: Run) -> int:
-    """Drive all seven steps to completion. EOF on a required prompt (or a declined confirmation)
+    """Drive all six steps to completion. EOF on a required prompt (or a declined confirmation)
     aborts and returns 6; an install error returns 5; otherwise 0.
     """
     try:
@@ -44,7 +44,6 @@ def _run_steps(run: Run) -> int:
     _step_welcome()
     state = _step_scan(run)
     _step_selection(run, state.get("trees") or [])
-    _step_modules(run, state.get("same_purpose_hooks") or [])
     _step_heads(run)
     code = _step_review(run)
     if code is not None:
@@ -118,14 +117,6 @@ def _parse_selection(line: str, trees: list[dict]) -> list[str]:
         if token.isdigit() and 1 <= int(token) <= len(trees):
             selected.append(trees[int(token) - 1]["path"])
     return selected
-
-
-def _step_modules(run: Run, same_purpose_hooks: list[str]) -> None:
-    default_yes = not same_purpose_hooks
-    if same_purpose_hooks:
-        print("Routing hooks already present: " + ", ".join(same_purpose_hooks) + ".")
-    routing = _confirm("Install routing policy and hooks?", default_yes)
-    api.set_modules(run, ["laws", *(["routing"] if routing else [])])
 
 
 def _step_heads(run: Run) -> None:
