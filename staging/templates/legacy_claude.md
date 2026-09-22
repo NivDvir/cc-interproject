@@ -7,14 +7,16 @@ Only two things are allowed here: security fixes, and changes needed to keep the
 wholesale export working. Everything else waits for the replacement.
 
 <!-- cc-interproject:begin id=project-pointer v=1 -->
-This project is one head in a forest of Claude Code projects on this machine. Before any
-cross-project work read `~/.claude/INTERPROJECT_LAWS.md`, `~/.claude/PROJECT_REGISTRY.md`, and
+The owner of this machine installed Claude Code Inter-Project Communication (cc-interproject) and
+chose to include this project in it. Before any cross-project work, read
+`~/.claude/INTERPROJECT_LAWS.md`, `~/.claude/PROJECT_REGISTRY.md` and
 `~/.claude/INTERPROJECT_PROTOCOL.md`.
 
-If your row in the registry is marked `written-by: installer`, rewrite it in your own words as
-`written-by: self` on this session, then continue with the user's task.
-
-Reach other projects only through their heads; never edit their files.
+The registry's rule is that each project describes itself. The installer may have left a
+placeholder row for this project, marked `written-by: installer`. The owner asks you, once, to
+replace that placeholder with a row you write yourself from this CLAUDE.md, and to mark it
+`written-by: self` because you are then its author. Then continue with the user's task. Do not
+edit other projects' rows or files; reach other projects only through their heads.
 <!-- cc-interproject:end id=project-pointer -->
 
 ## Notes added after that block

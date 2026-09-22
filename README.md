@@ -76,8 +76,10 @@ account, model `sonnet`, capped at 6 turns and $0.25 each.
 A project's row in `PROJECT_REGISTRY.md` is marked `written-by: self` when that project's own
 `CLAUDE.md` answered the registration call, or `written-by: installer` when it did not respond
 and the installer wrote a fallback row from the file's heading and first paragraph. An
-`installer` row is a placeholder, not the project speaking for itself; the project is expected to
-rewrite it as `self` the next time it runs a Claude Code session there.
+`installer` row is a placeholder, not the project speaking for itself. The owner asks the project,
+the next time it runs a Claude Code session there, to replace the placeholder with a row it writes
+itself; the label then records who wrote the current text, `self`. A placeholder row a project
+never replaces stays usable; it is simply not authoritative.
 
 ## The one manual step
 
