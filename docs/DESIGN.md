@@ -81,7 +81,9 @@ claude -p --model sonnet --allowedTools Read Glob --disallowedTools Write Edit B
 cwd = the project directory, `input=PACKET`, `timeout=120`, at most 4 in parallel. `--json-schema` is
 capability-probed from `claude --help` once (v2.1.268 has it). Parse tiers: envelope
 `structured_output` → `result` as JSON (fence stripped) → first balanced `{…}` in `result` → fallback.
-A row is `written-by: self` iff `name` and `owns` are non-empty; other fields default to `NOT STATED`.
+A row is `written-by: self` iff `owns` is non-empty. `name` always falls back to the tree's own
+name (`tree.name`) when the head's answer is empty or NOT STATED, so a registry row never carries
+a literal "NOT STATED" name; other fields default to `NOT STATED`.
 Auth-failure text is recognised and reported as a local problem, never counted against a head.
 Fallback (`heads/fallback.py`): name = first `# ` heading else directory name; owns = first
 non-heading paragraph cut to 40 words; the rest `NOT STATED`; `written-by: installer`.
