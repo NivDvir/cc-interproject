@@ -21,6 +21,10 @@ SOURCE_PACKAGE = REPO_ROOT / "src" / "six_laws_kit"
 ARCHIVE_NAME = "install.py"
 SUMS_NAME = "SHA256SUMS"
 FIXED_TIMESTAMP = 946684800  # 2000-01-01T00:00:00Z: safe above the 1980 ZIP floor in any timezone
+_FILE_MODE = 0o644
+_DIR_MODE = 0o755
+_MSDOS_DIR_ATTR = 0x10
+_UNIX_CREATE_SYSTEM = 3
 SKIP_NAMES = {"__pycache__", "ARCHITECTURE.md"}
 SKIP_SUFFIXES = {".pyc"}
 
@@ -69,7 +73,10 @@ def _normalize_archive_timestamps(archive_path: Path) -> None:
     fixed) mtime. Left alone, that one entry makes the archive's hash differ between any two
     builds, defeating both `--check` and a reproducible commit of `dist/install.py`.
     """
-    date_time = time.localtime(FIXED_TIMESTAMP)[:6]
+    # gmtime, not localtime: the archive must hash the same regardless of the *building*
+    # machine's own timezone (this repo's dev machine is UTC+2/+3; GitHub-hosted runners are
+    # UTC), so the epoch constant is interpreted as UTC wall-clock time everywhere.
+    date_time = time.gmtime(FIXED_TIMESTAMP)[:6]
     shebang_len = len(b"#!/usr/bin/env python3\n")
     prefix = archive_path.read_bytes()[:shebang_len]
     with zipfile.ZipFile(archive_path) as source:
@@ -87,6 +94,15 @@ def _normalize_archive_timestamps(archive_path: Path) -> None:
     with zipfile.ZipFile(tmp_path, "a", compression=zipfile.ZIP_STORED) as target:
         for info, data in entries:
             info.date_time = date_time
+            # `external_attr` and `create_system` otherwise carry the *building* host's own
+            # stat().st_mode and OS id (whatever git checkout / umask produced there), which is
+            # exactly the kind of per-machine noise this normalize pass exists to remove. Every
+            # bundled file is plain, non-executable source; only the outer archive itself needs
+            # its own exec bit, handled separately below.
+            is_dir = info.filename.endswith("/")
+            unix_mode = _DIR_MODE if is_dir else _FILE_MODE
+            info.external_attr = (unix_mode << 16) | (_MSDOS_DIR_ATTR if is_dir else 0)
+            info.create_system = _UNIX_CREATE_SYSTEM
             target.writestr(info, data)
     tmp_path.replace(archive_path)
     archive_path.chmod(mode)
