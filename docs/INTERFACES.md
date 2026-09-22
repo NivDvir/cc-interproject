@@ -50,6 +50,9 @@ def selected_trees(run: Run) -> List[Tree]          # flattened, selected only, 
 KIT_NAME = "six-laws-kit"; MANIFEST_NAME = "six-laws.manifest.json"
 HOOKS_SUBDIR = "hooks/six-laws"; STATE_SUBDIR = "six-laws-state"; BACKUPS_SUBDIR = "six-laws-backups"
 def skip_names() -> Set[str]                         # per-OS directory names never entered
+def home_dir() -> Path                               # $HOME override else Path.home() (Windows ignores HOME)
+def is_windows_shim(claude_bin: str) -> bool          # True if claude_bin resolves to a .cmd/.bat file
+def windows_shim_argv(command: List[str]) -> List[str]  # wraps command in cmd.exe /d /c when shimmed
 def manifest_path(claude_dir: Path) -> Path
 def hooks_dir(claude_dir: Path) -> Path
 def state_dir(claude_dir: Path) -> Path
