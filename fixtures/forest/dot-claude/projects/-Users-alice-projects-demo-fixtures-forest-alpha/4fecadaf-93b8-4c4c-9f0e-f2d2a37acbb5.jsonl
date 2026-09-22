@@ -1,0 +1,3 @@
+{"type": "user", "isSidechain": false, "timestamp": "2026-09-20T09:00:01.000Z", "message": {"role": "user", "content": [{"type": "text", "text": "What does this project do?"}]}}
+{"type": "assistant", "isSidechain": false, "timestamp": "2026-09-20T09:00:04.000Z", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_01", "name": "Read", "input": {"file_path": "CLAUDE.md"}}]}}
+{"type": "assistant", "isSidechain": false, "timestamp": "2026-09-20T09:00:07.000Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "Meridian Logbook keeps a running diary of shipping decisions."}]}}

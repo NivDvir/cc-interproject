@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dev tools
+        run: pip install ruff pytest
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
+
+      - name: Test
+        run: pytest -q
+
+      # Enabled in wave 4, once tools/bundle.py and dist/install.py exist.
+      - name: Bundle check
+        if: false
+        run: python tools/bundle.py --check
+
+      - name: Dry-run install
+        if: false
+        run: python dist/install.py --dry-run --no-browser --root fixtures/forest

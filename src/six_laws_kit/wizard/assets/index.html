@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Six Laws Kit — Installer</title>
+<style>
+<!--@css-->
+</style>
+</head>
+<body>
+<!--@icons-->
+<script>window.KIT_TOKEN = "%%TOKEN%%";</script>
+
+<div class="kit">
+  <header class="kit-header">
+    <h1>Six Laws Kit</h1>
+    <ol class="step-bar" id="step-bar">
+      <li class="step" data-step-item="welcome"><svg class="step-icon"><use href="#icon-welcome"></use></svg><span class="step-label">Welcome</span></li>
+      <li class="step" data-step-item="scan"><svg class="step-icon"><use href="#icon-scan"></use></svg><span class="step-label">Scan</span></li>
+      <li class="step" data-step-item="modules"><svg class="step-icon"><use href="#icon-modules"></use></svg><span class="step-label">Modules</span></li>
+      <li class="step" data-step-item="heads"><svg class="step-icon"><use href="#icon-heads"></use></svg><span class="step-label">Register heads</span></li>
+      <li class="step" data-step-item="review"><svg class="step-icon"><use href="#icon-review"></use></svg><span class="step-label">Review</span></li>
+      <li class="step" data-step-item="install"><svg class="step-icon"><use href="#icon-install"></use></svg><span class="step-label">Install</span></li>
+      <li class="step" data-step-item="done"><svg class="step-icon"><use href="#icon-done"></use></svg><span class="step-label">Done</span></li>
+    </ol>
+  </header>
+
+  <main>
+    <!-- WELCOME -->
+    <section data-step="welcome" aria-labelledby="welcome-h">
+      <h2 id="welcome-h">Before you start</h2>
+      <p>This installer looks at the Claude Code projects on this computer, asks each one you choose
+        a single question about itself, and then writes a small set of shared files so every project
+        can find and recognize the others. Nothing is written until you confirm the exact changes on
+        the Review step.</p>
+      <p class="cost-note">Cost note: one short Claude call per chosen project, on your account.</p>
+      <button type="button" class="btn btn-primary" id="btn-start">Start</button>
+    </section>
+
+    <!-- SCAN -->
+    <section data-step="scan" hidden aria-labelledby="scan-h">
+      <h2 id="scan-h">Scanning for projects</h2>
+      <p id="scan-counter" aria-live="polite">Looking for Claude Code projects&hellip;</p>
+      <div id="scan-results" hidden>
+        <ul class="tree" id="tree-root"></ul>
+        <details class="skipped" id="skipped-wrap" hidden>
+          <summary>Skipped locations</summary>
+          <ul id="skipped-list"></ul>
+        </details>
+      </div>
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" id="btn-scan-next" disabled>Next</button>
+      </div>
+    </section>
+
+    <!-- MODULES -->
+    <section data-step="modules" hidden aria-labelledby="modules-h">
+      <h2 id="modules-h">Choose modules</h2>
+      <fieldset class="modules">
+        <legend>What to install</legend>
+        <label class="module-row">
+          <input type="checkbox" id="mod-laws" checked disabled>
+          <span class="module-name">Six laws</span>
+          <span class="module-desc">The shared ownership and communication rules. Always installed.</span>
+        </label>
+        <label class="module-row">
+          <input type="checkbox" id="mod-routing" checked>
+          <span class="module-name">Routing policy and hooks</span>
+          <span class="module-desc">Delegates mechanical steps to a worker model and tracks it with two small hooks.</span>
+        </label>
+      </fieldset>
+      <p class="note" id="modules-conflict-note" hidden></p>
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" id="btn-modules-next">Continue</button>
+      </div>
+    </section>
+
+    <!-- HEADS -->
+    <section data-step="heads" hidden aria-labelledby="heads-h">
+      <h2 id="heads-h">Registering heads</h2>
+      <p>Each chosen project is asked, once, what it owns and what it watches for. This can take a
+        moment per project.</p>
+      <table class="heads-table" id="heads-table">
+        <thead>
+          <tr><th scope="col">Project</th><th scope="col">Status</th><th scope="col">Elapsed</th></tr>
+        </thead>
+        <tbody id="heads-tbody" aria-live="polite"></tbody>
+      </table>
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" id="btn-heads-next" disabled>Next</button>
+      </div>
+    </section>
+
+    <!-- REVIEW -->
+    <section data-step="review" hidden aria-labelledby="review-h">
+      <h2 id="review-h">Review the changes</h2>
+      <p>Nothing has been written yet. Expand any action to see its exact diff.</p>
+      <ul class="warnings" id="review-warnings" hidden></ul>
+      <ul class="actions" id="review-actions"></ul>
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" id="btn-confirm">Confirm</button>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section data-step="install" hidden aria-labelledby="install-h">
+      <h2 id="install-h">Installing</h2>
+      <div id="install-progress-wrap">
+        <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <p id="install-current" aria-live="polite">Preparing&hellip;</p>
+      </div>
+      <div id="install-dry-run-note" hidden>
+        <p><svg class="inline-icon"><use href="#icon-warning"></use></svg>
+          Dry run: the plan above was rendered but nothing was written.</p>
+      </div>
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" id="btn-install-close" hidden>Close (dry run)</button>
+      </div>
+    </section>
+
+    <!-- DONE -->
+    <section data-step="done" hidden aria-labelledby="done-h">
+      <h2 id="done-h">Done</h2>
+      <p id="done-counts"></p>
+      <p id="done-manifest"></p>
+      <div class="paste-block">
+        <label for="paste-text">Paste into Settings &rarr; Account &rarr; Instructions for Claude</label>
+        <textarea id="paste-text" readonly rows="8"></textarea>
+        <button type="button" class="btn" id="btn-copy">Copy</button>
+        <span id="copy-status" role="status" aria-live="polite"></span>
+      </div>
+      <p>Only you can write there, so this step cannot be automated: it is what reaches your chat and
+        Cowork sessions.</p>
+      <p class="uninstall-note">To remove everything this installer wrote: <code id="uninstall-cmd"></code></p>
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" id="btn-close">Close</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+<!--@js-->
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Fake `claude -p` used by tests. Imitates the head-call envelope from DESIGN.md section 4.
+
+Accepts and ignores the flags a real `claude -p` head call passes, reads the packet from stdin, and
+answers according to the KIT_FAKE_MODE environment variable (default "ok"): ok, noschema, garbage,
+slow, authfail, nonzero. See fixtures/README.md for what each mode proves.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+HELP_TEXT = """usage: claude [-p] [--model MODEL] [--allowedTools ...] [--disallowedTools ...]
+               [--output-format FORMAT] [--json-schema <schema>] [--max-turns N]
+               [--max-budget-usd USD] [--help] [--version]
+
+This is fixtures/claude_fake/claude, a stand-in for the real `claude` CLI used by tests.
+Supported flags include --json-schema <schema> and --max-budget-usd.
+"""
+
+VERSION_TEXT = "9.9.9 (fake)\n"
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-p", action="store_true")
+    parser.add_argument("--model")
+    parser.add_argument("--allowedTools", nargs="*", default=[])
+    parser.add_argument("--disallowedTools", nargs="*", default=[])
+    parser.add_argument("--output-format")
+    parser.add_argument("--json-schema")
+    parser.add_argument("--max-turns", type=int)
+    parser.add_argument("--max-budget-usd", type=float)
+    parser.add_argument("--help", action="store_true")
+    parser.add_argument("--version", action="store_true")
+    return parser
+
+
+def row_from_cwd() -> dict:
+    claude_md = Path.cwd() / "CLAUDE.md"
+    name = Path.cwd().name
+    first_paragraph = ""
+    if claude_md.is_file():
+        text = claude_md.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        for raw_line in lines:
+            if raw_line.startswith("# "):
+                name = raw_line[2:].strip()
+                break
+        paragraph_lines = []
+        past_heading = False
+        for raw_line in lines:
+            if raw_line.startswith("# "):
+                past_heading = True
+                continue
+            if not past_heading:
+                continue
+            if raw_line.strip() == "":
+                if paragraph_lines:
+                    break
+                continue
+            paragraph_lines.append(raw_line.strip())
+        first_paragraph = " ".join(paragraph_lines)
+    owns = first_paragraph or f"NOT STATED (no CLAUDE.md found for {name})"
+    return {
+        "name": name,
+        "owns": owns,
+        "asks_others_to_watch_for": "NOT STATED",
+        "contact_subject": f"{name} status",
+    }
+
+
+def emit_ok(with_schema: bool) -> None:
+    row = row_from_cwd()
+    envelope = {
+        "type": "result",
+        "subtype": "success",
+        "is_error": False,
+        "result": json.dumps(row),
+    }
+    if with_schema:
+        envelope["structured_output"] = row
+    else:
+        envelope["result"] = "```json\n" + json.dumps(row) + "\n```"
+    print(json.dumps(envelope))
+
+
+def emit_garbage() -> None:
+    print(json.dumps({"type": "result", "subtype": "success", "is_error": False, "result": "I cannot help with that."}))
+
+
+def emit_authfail() -> None:
+    print(json.dumps({"type": "result", "is_error": True, "result": "Not logged in. Please run /login"}))
+
+
+def main() -> int:
+    if "--help" in sys.argv[1:]:
+        print(HELP_TEXT)
+        return 0
+    if "--version" in sys.argv[1:]:
+        print(VERSION_TEXT, end="")
+        return 0
+
+    parser = build_parser()
+    parser.parse_known_args()
+    sys.stdin.read()
+
+    mode = os.environ.get("KIT_FAKE_MODE", "ok")
+
+    if mode == "ok":
+        emit_ok(with_schema=True)
+        return 0
+    if mode == "noschema":
+        emit_ok(with_schema=False)
+        return 0
+    if mode == "garbage":
+        emit_garbage()
+        return 0
+    if mode == "slow":
+        time.sleep(int(os.environ.get("KIT_FAKE_SLEEP", "5")))
+        emit_ok(with_schema=True)
+        return 0
+    if mode == "authfail":
+        emit_authfail()
+        return 1
+    if mode == "nonzero":
+        print("boom", file=sys.stderr)
+        return 2
+
+    print(f"unknown KIT_FAKE_MODE: {mode}", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
