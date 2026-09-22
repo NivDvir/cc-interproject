@@ -125,7 +125,10 @@ contains `packet-wrap`, `labor-tally`, `load-cap` (the owner's own bash hooks) o
 Each hook derives its state directory from home: an explicit `HOME` env var wins when set, else
 `Path.home()`. This matters only on Windows, where `Path.home()` reads `USERPROFILE` and ignores
 `HOME` — a caller (this repo's own tests included) that sandboxes the hook by setting only `HOME`
-would otherwise land outside the sandbox there.
+would otherwise land outside the sandbox there. `run_state.new_run` resolves `home` the same way,
+via `paths.home_dir()`, so a `--root`-sandboxed install and its hooks agree on where `~/.claude`
+(or its `dot-claude` stand-in) is even on Windows; the hooks keep their own copy of the same two
+lines since they may import nothing from the package.
 
 ## 7. Windows and Linux
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -108,6 +109,21 @@ def _row_from_fields(fields: dict[str, object] | None, tree: Tree, elapsed: floa
     )
 
 
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """Terminate `proc` and, on Windows, every descendant of it.
+
+    On Windows a `claude.cmd` call runs through `cmd.exe /d /c` (`paths.windows_shim_argv`), which
+    spawns the real interpreter as its own child; `Popen.kill()` only kills `cmd.exe` itself and
+    leaves that child running, holding the inherited stdout/stderr pipes open. The `communicate()`
+    call that drains those pipes after a timeout would then block until the orphan exits on its
+    own — i.e. until `timeout` stopped meaning anything. `taskkill /T` kills the whole tree instead.
+    """
+    if sys.platform.startswith("win"):
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+    else:
+        proc.kill()
+
+
 def ask_one(claude_bin: str, tree: Tree, json_schema: bool, timeout: int) -> Row:
     """Blocking: run one head call for `tree` and return its Row (real or fallback).
 
@@ -120,26 +136,31 @@ def ask_one(claude_bin: str, tree: Tree, json_schema: bool, timeout: int) -> Row
     command = paths.windows_shim_argv(packet.build_command(claude_bin, schema_arg))
     started = time.time()
     try:
-        proc = subprocess.run(
+        proc = subprocess.Popen(
             command,
             cwd=tree.path,
-            input=packet.PACKET,
-            capture_output=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout,
         )
-    except subprocess.TimeoutExpired:
-        return fallback.row_from_claude_md(tree.claude_md, time.time() - started, "timeout")
     except OSError:
         return fallback.row_from_claude_md(tree.claude_md, time.time() - started, "error")
 
+    try:
+        stdout, stderr = proc.communicate(input=packet.PACKET, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        _kill_tree(proc)
+        proc.communicate()
+        return fallback.row_from_claude_md(tree.claude_md, time.time() - started, "timeout")
+
     elapsed = time.time() - started
     if proc.returncode != 0:
-        combined = (proc.stdout or "") + (proc.stderr or "")
+        combined = (stdout or "") + (stderr or "")
         status = "authfail" if is_auth_failure_text(combined) else "error"
         return fallback.row_from_claude_md(tree.claude_md, elapsed, status)
 
-    fields = parse_row(proc.stdout or "")
+    fields = parse_row(stdout or "")
     return _row_from_fields(fields, tree, elapsed)
 
 

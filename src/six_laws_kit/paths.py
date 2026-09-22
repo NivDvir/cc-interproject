@@ -82,6 +82,24 @@ def read_package_resource(package: str, resource: str) -> str:
     return data.decode("utf-8")
 
 
+def home_dir() -> Path:
+    """The user's home directory: `Path.home()`, except on Windows, where an explicit `HOME` env
+    var wins when set.
+
+    `Path.home()` on Windows reads `USERPROFILE` and ignores `HOME` entirely, so a caller
+    sandboxing a run by setting only `HOME` (this repo's own end-to-end tests included) would
+    otherwise land outside the sandbox there. Off Windows, `Path.home()` already honours `HOME`
+    itself, so re-checking it here would only get in the way of a test that mocks `Path.home()`
+    directly. The standalone hooks under `hooks/` keep their own copy of this, since they may
+    import nothing from the package.
+    """
+    if sys.platform.startswith("win"):
+        override = os.environ.get("HOME")
+        if override:
+            return Path(override)
+    return Path.home()
+
+
 def manifest_path(claude_dir: Path) -> Path:
     return claude_dir / MANIFEST_NAME
 

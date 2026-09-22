@@ -47,6 +47,14 @@ is about to route through the shim and leans on `parse_row`'s fenced/balanced-br
 instead. `probe_capabilities` still reports whether the CLI supports the flag (for the manifest);
 only sending it is skipped.
 
+A second consequence of the `cmd.exe` hop: `cmd.exe` spawns the real interpreter as its own child,
+so on a timeout, killing only the top-level process (what `subprocess.run`'s own timeout handling
+does) leaves that child running and holding the inherited stdout/stderr pipes open — the
+`communicate()` call draining them afterward would then block until the orphan exits on its own,
+defeating the timeout. `ask_one` manages the subprocess itself (`Popen` + `communicate(timeout=)`)
+so that on `TimeoutExpired` it can call `taskkill /F /T /PID <pid>` instead of `Popen.kill()`,
+killing the whole tree. Off Windows this is a plain `Popen.kill()`, identical to before.
+
 ## Contract
 
 A row is `written_by="self"` iff the head's own answer supplied a non-empty `name` and `owns`;

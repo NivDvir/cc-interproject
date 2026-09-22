@@ -9,6 +9,8 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from six_laws_kit import paths
+
 DEFAULT_MODULES = {"laws", "routing"}
 
 
@@ -72,12 +74,12 @@ class Run:
 def new_run(args: argparse.Namespace) -> Run:
     """Build a Run from parsed CLI arguments.
 
-    `home` is always the real `Path.home()`. `root` is that same directory unless `--root` was
-    given, in which case `claude_dir` moves to `root/"dot-claude"` instead of `home/".claude"` —
-    the testing convention that keeps a fixture forest's own `.claude` stand-in out of the way of
-    the real one.
+    `home` is `paths.home_dir()` (an explicit `HOME` override, else the real `Path.home()`).
+    `root` is that same directory unless `--root` was given, in which case `claude_dir` moves to
+    `root/"dot-claude"` instead of `home/".claude"` — the testing convention that keeps a fixture
+    forest's own `.claude` stand-in out of the way of the real one.
     """
-    home = Path.home()
+    home = paths.home_dir()
     root_arg = getattr(args, "root", None)
     root = Path(root_arg) if root_arg else home
     claude_dir = root / "dot-claude" if root != home else home / ".claude"

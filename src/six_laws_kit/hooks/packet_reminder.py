@@ -28,12 +28,17 @@ def _sanitize_session_id(raw: str) -> str:
 
 
 def _home_dir() -> Path:
-    """An explicit `HOME` always wins over `Path.home()`, which on Windows reads `USERPROFILE`
-    and ignores `HOME` entirely — so a caller sandboxing this hook by setting only `HOME` (as the
-    installer and this repo's own tests do) would otherwise land outside the sandbox there.
+    """`Path.home()`, except on Windows, where an explicit `HOME` env var wins when set.
+
+    `Path.home()` on Windows reads `USERPROFILE` and ignores `HOME` entirely — so a caller
+    sandboxing this hook by setting only `HOME` (as the installer and this repo's own tests do)
+    would otherwise land outside the sandbox there.
     """
-    override = os.environ.get("HOME")
-    return Path(override) if override else Path.home()
+    if sys.platform.startswith("win"):
+        override = os.environ.get("HOME")
+        if override:
+            return Path(override)
+    return Path.home()
 
 
 def _state_dir() -> Path:
