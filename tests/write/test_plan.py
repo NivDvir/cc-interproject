@@ -148,7 +148,7 @@ def test_build_with_routing_module_copies_hooks_and_merges_settings(
     hook_names = {a.target.name for a in hook_actions}
     assert hook_names == {"packet_reminder.py", "labor_tally.py", "load_cap.py", "PACKET_REMINDER.md"}
     for action in hook_actions:
-        assert str(action.target).endswith(f"hooks/six-laws/{action.target.name}")
+        assert action.target.as_posix().endswith(f"hooks/six-laws/{action.target.name}")
 
     merge_actions = [a for a in actions if a.kind == "merge_hooks"]
     assert len(merge_actions) == 1

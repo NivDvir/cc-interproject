@@ -62,6 +62,8 @@ def test_load_malformed_json_returns_none(tmp_path: Path):
 
 
 def test_sha256_matches_hashlib(tmp_path: Path):
+    # write_bytes, not write_text: text mode applies universal-newline translation on write, so
+    # "\n" becomes "\r\n" on Windows and the file would no longer be the exact bytes hashed below.
     path = tmp_path / "f.txt"
-    path.write_text("hello\n", encoding="utf-8")
+    path.write_bytes(b"hello\n")
     assert record.sha256(path) == hashlib.sha256(b"hello\n").hexdigest()

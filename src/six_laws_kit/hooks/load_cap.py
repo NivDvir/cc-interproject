@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -37,8 +38,17 @@ def _sanitize_session_id(raw: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]", "_", raw)[:SID_MAX_LEN]
 
 
+def _home_dir() -> Path:
+    """An explicit `HOME` always wins over `Path.home()`, which on Windows reads `USERPROFILE`
+    and ignores `HOME` entirely — so a caller sandboxing this hook by setting only `HOME` (as the
+    installer and this repo's own tests do) would otherwise land outside the sandbox there.
+    """
+    override = os.environ.get("HOME")
+    return Path(override) if override else Path.home()
+
+
 def _state_dir() -> Path:
-    path = Path.home() / ".claude" / STATE_DIRNAME
+    path = _home_dir() / ".claude" / STATE_DIRNAME
     path.mkdir(parents=True, exist_ok=True)
     return path
 

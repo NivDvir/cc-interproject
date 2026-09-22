@@ -14,8 +14,10 @@ def test_report_when_nothing_is_installed(tmp_path: Path):
 
 
 def test_report_lists_entries_and_head_counts(tmp_path: Path):
+    # write_bytes, not write_text: text mode's universal-newline translation would turn "\n" into
+    # "\r\n" on Windows, so the file's real bytes would no longer match the sha256 below.
     target = tmp_path / "SIX_LAWS.md"
-    target.write_text("law\n", encoding="utf-8")
+    target.write_bytes(b"law\n")
     sha = hashlib.sha256(b"law\n").hexdigest()
     manifest = {
         "kit_version": "0.1.0",
