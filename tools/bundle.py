@@ -11,7 +11,9 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 import zipapp
+import zipfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -49,8 +51,34 @@ def build(output_dir: Path) -> Path:
             main="six_laws_kit.cli:main",
             compressed=True,
         )
+    _normalize_archive_timestamps(archive_path)
     (output_dir / SUMS_NAME).write_text(f"{_sha256(archive_path)}  {ARCHIVE_NAME}\n", encoding="utf-8")
     return archive_path
+
+
+def _normalize_archive_timestamps(archive_path: Path) -> None:
+    """Rewrite every zip member's stored date-time to `FIXED_TIMESTAMP`.
+
+    `zipapp.create_archive` writes its generated `__main__.py` with `ZipFile.writestr`, which
+    stamps that one entry with the current wall-clock time instead of a source file's (already
+    fixed) mtime. Left alone, that one entry makes the archive's hash differ between any two
+    builds, defeating both `--check` and a reproducible commit of `dist/install.py`.
+    """
+    date_time = time.localtime(FIXED_TIMESTAMP)[:6]
+    shebang_len = len(b"#!/usr/bin/env python3\n")
+    prefix = archive_path.read_bytes()[:shebang_len]
+    with zipfile.ZipFile(archive_path) as source:
+        entries = [(info, source.read(info)) for info in source.infolist()]
+    mode = archive_path.stat().st_mode
+    with tempfile.NamedTemporaryFile(dir=archive_path.parent, delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+        tmp.write(prefix)
+    with zipfile.ZipFile(tmp_path, "a", compression=zipfile.ZIP_DEFLATED) as target:
+        for info, data in entries:
+            info.date_time = date_time
+            target.writestr(info, data)
+    tmp_path.replace(archive_path)
+    archive_path.chmod(mode)
 
 
 def _sha256(path: Path) -> str:

@@ -14,10 +14,9 @@ import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from importlib import resources
-from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from six_laws_kit import paths
 from six_laws_kit.run_state import Run
 from six_laws_kit.wizard import api
 
@@ -71,11 +70,7 @@ def render_page(token: str) -> str:
 
 def read_asset(name: str) -> str:
     """Read one file from `wizard/assets/`, from the source tree or from inside the zipapp."""
-    try:
-        resource = resources.files(__package__).joinpath("assets").joinpath(name)
-        return resource.read_text(encoding="utf-8")
-    except (FileNotFoundError, NotADirectoryError, AttributeError):
-        return (Path(__file__).resolve().parent / "assets" / name).read_text(encoding="utf-8")
+    return paths.read_package_resource(__package__, f"assets/{name}")
 
 
 class _WizardServer(ThreadingHTTPServer):

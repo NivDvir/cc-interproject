@@ -7,7 +7,6 @@ exists, writes nothing, computes every diff in memory. `render_text` prints the 
 from __future__ import annotations
 
 import difflib
-import importlib.resources
 import json
 from pathlib import Path
 
@@ -162,12 +161,11 @@ def _settings_action(run: Run) -> Action:
 
 
 def _read_hook_source(filename: str) -> str:
-    """Read one of the kit's standalone hook programs. Uses `importlib.resources` (like
+    """Read one of the kit's standalone hook programs, via `paths.read_package_resource` (like
     `texts.loader.read`) rather than `Path(__file__)`, since the latter raises when the package
     is running from inside the zipapp bundle.
     """
-    resource = importlib.resources.files("six_laws_kit.hooks").joinpath(filename)
-    return resource.read_text(encoding="utf-8")
+    return paths.read_package_resource("six_laws_kit.hooks", filename)
 
 
 def _copy_hook_action(target: Path, payload: str) -> Action:
@@ -248,9 +246,11 @@ def _append_line(existing: str, line: str) -> str:
 def _read_existing(target: Path) -> str:
     """Read a pre-existing file's exact text: `newline=""` disables universal-newline
     translation, so a CRLF-authored file (and any BOM, since `encoding="utf-8"` never strips one)
-    round-trips byte-for-byte instead of being silently rewritten as LF.
+    round-trips byte-for-byte instead of being silently rewritten as LF. Uses `Path.open` rather
+    than `Path.read_text(newline=...)`, whose `newline` argument is only available on Python 3.13+.
     """
-    return target.read_text(encoding="utf-8", newline="")
+    with target.open(encoding="utf-8", newline="") as handle:
+        return handle.read()
 
 
 def _block_for(marker_id: str, body: str, existing_text: str) -> str:

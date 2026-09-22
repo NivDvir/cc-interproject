@@ -5,6 +5,7 @@ helpers that build a hook's registered command.
 
 from __future__ import annotations
 
+import pkgutil
 import re
 import shutil
 import sys
@@ -61,6 +62,23 @@ def skip_names() -> set[str]:
     if sys.platform.startswith("win"):
         names |= _WINDOWS_EXTRA_SKIP_NAMES
     return names
+
+
+def read_package_resource(package: str, resource: str) -> str:
+    """Read one text file this package ships, addressed by dotted package name and a
+    forward-slash relative path (e.g. `"assets/index.html"`), from the source tree or from
+    inside the zipapp bundle alike.
+
+    Goes through `pkgutil.get_data` rather than `importlib.resources.files(...).joinpath(...)`:
+    on Windows, `importlib.resources`'s zipimport-backed reader can join the package's own
+    zip-internal prefix to the resource name with `os.sep` instead of `/`, producing a mixed
+    separator that is not a real archive member (seen on Python 3.9). `pkgutil.get_data`
+    normalizes separators itself and has no such bug.
+    """
+    data = pkgutil.get_data(package, resource)
+    if data is None:
+        raise FileNotFoundError(resource)
+    return data.decode("utf-8")
 
 
 def manifest_path(claude_dir: Path) -> Path:
