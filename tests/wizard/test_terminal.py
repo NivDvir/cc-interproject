@@ -36,7 +36,12 @@ def test_install_flow_selects_two_projects_and_writes_the_manifest(
     run = _make_run(forest_home, "install")
     preflight.find_claude(run)
     preflight.probe_capabilities(run)
-    _scripted_input(monkeypatch, ["1 2", "", "y"])
+    # Discovery is sorted (depth, then path) for a deterministic numbered list: [1] alpha,
+    # [2] beta, [3] dot-claude. "2 3" picks the two projects with no subtree of their own, so
+    # each numbered pick becomes exactly one self-written head; "1" would also cascade to
+    # alpha's own subtree (alpha/sub), which is a separate, correct addressable project of its
+    # own and is covered instead by test_walk_finds_every_top_level_and_nested_project.
+    _scripted_input(monkeypatch, ["2 3", "", "y"])
 
     code = terminal.run(run)
 

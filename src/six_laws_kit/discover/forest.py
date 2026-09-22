@@ -13,10 +13,12 @@ _HEADING_PREFIX = "# "
 
 def build(claude_mds: list[Path]) -> list[Tree]:
     """Return top-level Trees; a `CLAUDE.md` inside another project's directory becomes a
-    subtree of the nearest project above it, never a root of its own.
+    subtree of the nearest project above it, never a root of its own. Sorted by depth then by
+    path (as a stable tie-break for same-depth entries) so the numbered list a user picks from
+    does not depend on the filesystem's own, OS-dependent directory-entry order.
     """
     top_level: list[Tree] = []
-    for claude_md in sorted(claude_mds, key=lambda p: len(p.parent.parts)):
+    for claude_md in sorted(claude_mds, key=lambda p: (len(p.parent.parts), p.parent.as_posix())):
         project_dir = claude_md.parent
         tree = Tree(path=project_dir, name=_read_name(claude_md), claude_md=claude_md)
         parent = _nearest_ancestor(top_level, project_dir)

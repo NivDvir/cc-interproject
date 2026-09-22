@@ -1,0 +1,6 @@
+# Normalize every tracked text file to LF, regardless of a runner's own core.autocrlf default.
+# Without this, GitHub's windows-latest images (core.autocrlf=true) check the repo out with CRLF,
+# which corrupts fixed sha256 hashes, fixture byte-content, and pointer-block round-trips that
+# this project's own tests compare byte-for-byte. Tests that specifically need CRLF content build
+# it themselves at runtime; none of it is stored in the repo.
+* text=auto eol=lf
