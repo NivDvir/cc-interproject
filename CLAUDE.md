@@ -13,4 +13,6 @@ code), `docs/STYLE.md` (the style contract), `../../publication/six-laws-kit/SPE
 behaviour). Everything public-facing (README, texts/, wizard copy) is approved by Niv before it leaves.
 
 Working rules inherited from the parent: `../../.claude/DELEGATION.md` and the parent `CLAUDE.md`.
-Never run the installer for real on this machine from a session here; `--dry-run` only.
+Never run the installer against this machine's real `~/.claude` or real projects from a session here;
+`--dry-run` only. A real install IS allowed against a throwaway HOME built by `staging/build_home.py`
+under `/private/tmp/…` (HOME and --root both pointing there), which is how `docs/STAGING.md` is exercised.
