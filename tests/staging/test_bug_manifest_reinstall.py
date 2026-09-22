@@ -1,7 +1,7 @@
 """Bug: a second install replaces the manifest, so `--uninstall` can no longer undo the first one.
 
 `write/apply.py:28` starts every run from `manifest.record.new(...)`, an empty `entries` list, and
-overwrites `~/.claude/six-laws.manifest.json` at the end. On a re-install the idempotent steps
+overwrites `~/.claude/interproject.manifest.json` at the end. On a re-install the idempotent steps
 record nothing (`write/apply.py:_apply_create_file` returns early when the file already exists,
 `_apply_insert_block` returns early when its diff is empty), so the new manifest forgets the law
 files, the pointer blocks and the account pointer
@@ -13,9 +13,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from six_laws_kit import paths
-from six_laws_kit.run_state import Run, Tree
-from six_laws_kit.write import apply, plan
+from cc_interproject import paths
+from cc_interproject.run_state import Run, Tree
+from cc_interproject.write import apply, plan
 
 
 def _run(tmp_path: Path) -> Run:

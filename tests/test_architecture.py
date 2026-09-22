@@ -1,4 +1,4 @@
-"""The import gate: walks every module under `src/six_laws_kit/`, parses its imports with `ast`,
+"""The import gate: walks every module under `src/cc_interproject/`, parses its imports with `ast`,
 and enforces the STYLE.md import rule (a category imports only the stdlib, `run_state`, `paths`,
 and its own siblings) plus its named exceptions from `docs/DESIGN.md` section 2. Also checks that
 every category has an `ARCHITECTURE.md` and that no source file has grown past the size limits.
@@ -10,7 +10,7 @@ import ast
 import warnings
 from pathlib import Path
 
-PACKAGE = "six_laws_kit"
+PACKAGE = "cc_interproject"
 SRC_ROOT = Path(__file__).resolve().parent.parent / "src" / PACKAGE
 CATEGORY_DIRS = {"discover", "heads", "wizard", "write", "manifest", "texts"}
 ALWAYS_ALLOWED = {"run_state", "paths"}

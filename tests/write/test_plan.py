@@ -9,26 +9,26 @@ from pathlib import Path
 
 import pytest
 
-from six_laws_kit.run_state import Run, Tree
-from six_laws_kit.write import blocks, plan
+from cc_interproject.run_state import Run, Tree
+from cc_interproject.write import blocks, plan
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 _FIXTURES_DIR = _REPO_ROOT / "fixtures"
 
 _TEXTS = {
-    "SIX_LAWS.md": "law text\n",
+    "INTERPROJECT_LAWS.md": "law text\n",
     "INTERPROJECT_PROTOCOL.md": "protocol text\n",
     "PRIOR_ART.md": "prior art text\n",
     "DISPATCHER_QUEUE.md": "queue text\n",
     "REGISTRY_HEADER.md": "# Project registry\n\nRead before any cross-project work.\n",
-    "ACCOUNT_POINTER.md": "Read the six laws before any cross-project work.\n\n---\n\nmore prose here.\n",
+    "ACCOUNT_POINTER.md": "Read the laws before any cross-project work.\n\n---\n\nmore prose here.\n",
     "PROJECT_POINTER.md": "Reach other projects only through their heads.\n",
 }
 
 
 @pytest.fixture(autouse=True)
 def _fake_texts(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("six_laws_kit.texts.loader.read", lambda name: _TEXTS[name])
+    monkeypatch.setattr("cc_interproject.texts.loader.read", lambda name: _TEXTS[name])
 
 
 def _make_run(home: Path) -> Run:
@@ -61,7 +61,7 @@ def test_build_creates_missing_law_files_and_the_registry(forest_home: Path):
     assert actions is run.plan
     created_names = {a.target.name for a in actions if a.kind == "create_file" and not a.existed}
     assert created_names == {
-        "SIX_LAWS.md",
+        "INTERPROJECT_LAWS.md",
         "INTERPROJECT_PROTOCOL.md",
         "PRIOR_ART.md",
         "DISPATCHER_QUEUE.md",
@@ -73,10 +73,10 @@ def test_build_creates_missing_law_files_and_the_registry(forest_home: Path):
 
 
 def test_build_keeps_an_existing_law_file(forest_home: Path):
-    (forest_home / "dot-claude" / "SIX_LAWS.md").write_text("already here\n", encoding="utf-8")
+    (forest_home / "dot-claude" / "INTERPROJECT_LAWS.md").write_text("already here\n", encoding="utf-8")
     run = _make_run(forest_home)
     actions = plan.build(run)
-    kept = [a for a in actions if a.kind == "create_file" and a.target.name == "SIX_LAWS.md"]
+    kept = [a for a in actions if a.kind == "create_file" and a.target.name == "INTERPROJECT_LAWS.md"]
     assert len(kept) == 1
     assert kept[0].existed is True
     assert "kept existing:" in plan.render_text(actions)
@@ -89,7 +89,7 @@ def test_build_appends_the_account_pointer_line_once(forest_home: Path):
     assert len(append_actions) == 1
     action = append_actions[0]
     assert action.target == forest_home / "dot-claude" / "CLAUDE.md"
-    assert "Read the six laws" in action.payload
+    assert "Read the laws" in action.payload
 
     (forest_home / "dot-claude" / "CLAUDE.md").write_text(action.payload, encoding="utf-8")
     run_again = _make_run(forest_home)

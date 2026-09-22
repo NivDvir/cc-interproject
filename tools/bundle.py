@@ -1,4 +1,4 @@
-"""Builds the single-file installer: zips `src/six_laws_kit/` into `dist/install.py` with
+"""Builds the single-file installer: zips `src/cc_interproject/` into `dist/install.py` with
 `zipapp`, plus a `dist/SHA256SUMS` next to it. `--check` rebuilds into a temp directory and exits
 1 if the result differs from what is committed, so CI catches a stale bundle.
 """
@@ -17,7 +17,7 @@ import zipfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SOURCE_PACKAGE = REPO_ROOT / "src" / "six_laws_kit"
+SOURCE_PACKAGE = REPO_ROOT / "src" / "cc_interproject"
 ARCHIVE_NAME = "install.py"
 SUMS_NAME = "SHA256SUMS"
 FIXED_TIMESTAMP = 946684800  # 2000-01-01T00:00:00Z: safe above the 1980 ZIP floor in any timezone
@@ -30,14 +30,14 @@ SKIP_SUFFIXES = {".pyc"}
 
 
 def stage_source(staging_dir: Path) -> None:
-    """Copy `src/six_laws_kit` into `staging_dir`, excluding caches, bytecode, and ARCHITECTURE.md,
+    """Copy `src/cc_interproject` into `staging_dir`, excluding caches, bytecode, and ARCHITECTURE.md,
     then freeze every file's mtime so repeated builds hash identically.
     """
 
     def _ignore(_dir: str, names: list[str]) -> set[str]:
         return {name for name in names if name in SKIP_NAMES or Path(name).suffix in SKIP_SUFFIXES}
 
-    shutil.copytree(SOURCE_PACKAGE, staging_dir / "six_laws_kit", ignore=_ignore)
+    shutil.copytree(SOURCE_PACKAGE, staging_dir / "cc_interproject", ignore=_ignore)
     for path in staging_dir.rglob("*"):
         os.utime(path, (FIXED_TIMESTAMP, FIXED_TIMESTAMP))
 
@@ -52,7 +52,7 @@ def build(output_dir: Path) -> Path:
             source=Path(staging),
             target=archive_path,
             interpreter="/usr/bin/env python3",
-            main="six_laws_kit.cli:main",
+            main="cc_interproject.cli:main",
             # Uncompressed (ZIP_STORED): DEFLATE output is not guaranteed byte-identical across
             # zlib builds/versions, which would make the committed archive's hash depend on which
             # machine built it. Stored bytes are copied verbatim, so the archive hashes the same
@@ -128,7 +128,7 @@ def check(output_dir: Path) -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build the six-laws-kit zipapp installer.")
+    parser = argparse.ArgumentParser(description="Build the cc-interproject zipapp installer.")
     parser.add_argument("--check", action="store_true", help="Verify the build is current; write nothing.")
     parser.add_argument("--output-dir", default="dist", metavar="DIR", help="Where to write the archive.")
     args = parser.parse_args(argv)

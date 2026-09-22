@@ -1,7 +1,7 @@
 """Build a throwaway HOME directory that looks like a real Claude Code user's machine, so the
 installer can be exercised against something messier than `fixtures/forest`. Content comes from
 the files in `staging/templates/`; this module only places them and generates the session
-transcripts. Nothing here reads or imports `src/six_laws_kit`.
+transcripts. Nothing here reads or imports `src/cc_interproject`.
 
 Usage: `python3 staging/build_home.py --out DIR`. Exit codes: 0 ok, 2 DIR exists and is not empty.
 """
@@ -21,13 +21,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 TEMPLATES = Path(__file__).resolve().parent / "templates"
-MARKER_NAME = ".six-laws-staging"
+MARKER_NAME = ".cc-interproject-staging"
 SEED = 20260922
 
 # The marker text `write/blocks.py` renders for a project pointer. Hard-coded on purpose: the
 # staging home must not import the code under test. `tests/staging` asserts it still matches.
-POINTER_BEGIN = "<!-- six-laws-kit:begin id=project-pointer v=1 -->"
-POINTER_END = "<!-- six-laws-kit:end id=project-pointer -->"
+POINTER_BEGIN = "<!-- cc-interproject:begin id=project-pointer v=1 -->"
+POINTER_END = "<!-- cc-interproject:end id=project-pointer -->"
 
 # HOME-relative posix paths of every project the scan is expected to discover, in no order.
 EXPECTED_PROJECTS = (
@@ -296,7 +296,7 @@ def _now() -> datetime:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build a staging HOME for the six-laws-kit tests.")
+    parser = argparse.ArgumentParser(description="Build a staging HOME for the cc-interproject tests.")
     parser.add_argument("--out", required=True, metavar="DIR", help="Where to build the HOME.")
     args = parser.parse_args(argv)
     out = Path(args.out).expanduser()

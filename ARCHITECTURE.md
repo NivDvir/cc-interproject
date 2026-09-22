@@ -1,13 +1,13 @@
 # Architecture
 
-Full design: `docs/DESIGN.md`. Behaviour: `publication/six-laws-kit/SPEC.md` (parent repo).
+Full design: `docs/DESIGN.md`. Behaviour: `publication/cc-interproject/SPEC.md` (parent repo).
 This file is a map, not a duplicate of either.
 
 ## Category map
 
 | Category | Job |
 |---|---|
-| `src/six_laws_kit/` root (`cli.py`, `run_state.py`, `paths.py`) | Entry point, shared state, filesystem locations. |
+| `src/cc_interproject/` root (`cli.py`, `run_state.py`, `paths.py`) | Entry point, shared state, filesystem locations. |
 | `discover/` | Walk `$HOME`, find projects (a directory with its own `CLAUDE.md`), build the forest, annotate with session history. |
 | `heads/` | Ask each chosen project's own `CLAUDE.md` for its registry row, headless, with a fallback path. |
 | `wizard/` | The local HTTP server and browser UI that drives the install flow; `terminal.py` mirrors it without a browser. |
@@ -43,5 +43,5 @@ a shortcut compile.
 | The manifest schema and writer | `manifest/record.py` |
 | `--uninstall` | `manifest/uninstall.py` |
 | `--status` | `manifest/status.py` |
-| Static text bodies (SIX_LAWS.md, protocol, etc.) | `texts/` |
+| Static text bodies (INTERPROJECT_LAWS.md, protocol, etc.) | `texts/` |
 | The zipapp build | `tools/bundle.py`, `tools/ARCHITECTURE.md` |

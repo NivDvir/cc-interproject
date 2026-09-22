@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from six_laws_kit import paths
-from six_laws_kit.discover import forest, walk
-from six_laws_kit.run_state import Tree
+from cc_interproject import paths
+from cc_interproject.discover import forest, walk
+from cc_interproject.run_state import Tree
 
 
 def test_build_nests_alpha_sub_under_alpha(forest_home):

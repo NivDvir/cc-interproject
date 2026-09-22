@@ -13,7 +13,7 @@ Source: the owner's charter `~/dev/reticle-access/docs/style/STYLE_NIV.md` and i
 - One owner per feature: the module that owns a feature holds all of its logic. No thin service
   layers, no interfaces / abstract classes / generics of our own. Layers only where a framework
   forces them.
-- Tests mirror `src/six_laws_kit/` one to one under `tests/`. Fixtures live in `fixtures/` at the repo
+- Tests mirror `src/cc_interproject/` one to one under `tests/`. Fixtures live in `fixtures/` at the repo
   root, outside the test tree.
 - Module docstring: purpose and usage in two or three prose sentences. `from __future__ import
   annotations` first. Constants in SCREAMING_SNAKE at the top of the file. CLI modules use argparse,

@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from six_laws_kit.heads import preflight
-from six_laws_kit.run_state import Run
-from six_laws_kit.wizard import server
+from cc_interproject.heads import preflight
+from cc_interproject.run_state import Run
+from cc_interproject.wizard import server
 from tests.wizard.test_server import make_run, request, start_server
 
 POLL_TIMEOUT_SECONDS = 60
@@ -117,8 +117,8 @@ def test_full_flow_installs_and_reports(serving, forest_home):
     assert finished["installer_rows"] == 0
     assert finished["uninstall_cmd"] == "python3 install.py --uninstall"
     assert Path(finished["manifest_path"]).is_file()
-    assert "SIX_LAWS.md" in finished["paste_block"]
-    assert (forest_home / "dot-claude" / "SIX_LAWS.md").is_file()
+    assert "INTERPROJECT_LAWS.md" in finished["paste_block"]
+    assert (forest_home / "dot-claude" / "INTERPROJECT_LAWS.md").is_file()
 
     status, quit_payload = call(httpd, run, "/api/quit", method="POST")
     assert (status, quit_payload) == (200, {"ok": True})
@@ -163,4 +163,4 @@ def test_install_start_is_refused_without_confirmation_in_install_mode(forest_ho
 
 
 def test_render_page_is_reachable_from_the_same_module():
-    assert "Six Laws Kit" in server.render_page("token")
+    assert "Claude Code Inter-Project Communication" in server.render_page("token")

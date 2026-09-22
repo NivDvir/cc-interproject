@@ -1,9 +1,9 @@
-"""Tests for six_laws_kit.heads.preflight against fixtures/claude_fake/claude."""
+"""Tests for cc_interproject.heads.preflight against fixtures/claude_fake/claude."""
 
 from __future__ import annotations
 
-from six_laws_kit.heads import preflight
-from six_laws_kit.run_state import Run
+from cc_interproject.heads import preflight
+from cc_interproject.run_state import Run
 
 
 def _make_run(tmp_path):

@@ -33,7 +33,7 @@ than the one above it.
 ## How to run
 
 ```
-python3 staging/e2e.py --home /private/tmp/six-laws-staging   # --keep to inspect afterwards
+python3 staging/e2e.py --home /private/tmp/cc-interproject-staging   # --keep to inspect afterwards
 python3 -m pytest tests/staging -q
 ```
 
@@ -47,15 +47,15 @@ HOME is chosen by setting `HOME`; `claude --help` at v2.1.268 documents no `CLAU
 and keep the tree — `e2e.py` uninstalls at step 6, so do not use it for this:
 
 ```
-python3 staging/build_home.py --out /private/tmp/six-laws-manual
-printf 'all\ny\n' | PATH="$PWD/fixtures/claude_fake:$PATH" HOME=/private/tmp/six-laws-manual python3 dist/install.py --no-browser --root /private/tmp/six-laws-manual
+python3 staging/build_home.py --out /private/tmp/cc-interproject-manual
+printf 'all\ny\n' | PATH="$PWD/fixtures/claude_fake:$PATH" HOME=/private/tmp/cc-interproject-manual python3 dist/install.py --no-browser --root /private/tmp/cc-interproject-manual
 ```
 
 Law 1 loop. In `.claude/PROJECT_REGISTRY.md` change the `code/webapp` row's `Written by` cell
 to `installer`, then run this; it must read `self` afterwards. Remove the tree when done.
 
 ```
-cd /private/tmp/six-laws-manual/code/webapp
-HOME=/private/tmp/six-laws-manual claude -p "Do what your CLAUDE.md tells you to do on your first session, then reply DONE." --allowedTools Read Edit Write Glob --max-turns 8 --output-format json
-grep "code/webapp |" /private/tmp/six-laws-manual/.claude/PROJECT_REGISTRY.md
+cd /private/tmp/cc-interproject-manual/code/webapp
+HOME=/private/tmp/cc-interproject-manual claude -p "Do what your CLAUDE.md tells you to do on your first session, then reply DONE." --allowedTools Read Edit Write Glob --max-turns 8 --output-format json
+grep "code/webapp |" /private/tmp/cc-interproject-manual/.claude/PROJECT_REGISTRY.md
 ```

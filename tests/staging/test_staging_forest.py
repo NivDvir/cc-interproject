@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from six_laws_kit.write import blocks
-from six_laws_kit.write.plan import MARKER_VERSION, POINTER_MARKER
+from cc_interproject.write import blocks
+from cc_interproject.write.plan import MARKER_VERSION, POINTER_MARKER
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 

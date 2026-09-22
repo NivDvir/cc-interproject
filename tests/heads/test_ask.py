@@ -1,12 +1,12 @@
-"""Tests for six_laws_kit.heads.ask against fixtures/claude_fake/claude and fixtures/forest/alpha."""
+"""Tests for cc_interproject.heads.ask against fixtures/claude_fake/claude and fixtures/forest/alpha."""
 
 from __future__ import annotations
 
 import time
 from pathlib import Path
 
-from six_laws_kit.heads import ask
-from six_laws_kit.run_state import Run, Tree
+from cc_interproject.heads import ask
+from cc_interproject.run_state import Run, Tree
 
 FOREST = Path(__file__).resolve().parents[2] / "fixtures" / "forest"
 

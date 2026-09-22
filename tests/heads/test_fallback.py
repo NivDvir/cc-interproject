@@ -1,10 +1,10 @@
-"""Tests for six_laws_kit.heads.fallback: the installer's own summary of a project's CLAUDE.md."""
+"""Tests for cc_interproject.heads.fallback: the installer's own summary of a project's CLAUDE.md."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from six_laws_kit.heads import fallback
+from cc_interproject.heads import fallback
 
 FOREST = Path(__file__).resolve().parents[2] / "fixtures" / "forest"
 

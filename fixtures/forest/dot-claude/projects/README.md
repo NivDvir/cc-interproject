@@ -1,4 +1,4 @@
-This directory name (`-Users-guydvir-opportunity-radar-kits-six-laws-kit-fixtures-forest-alpha`) is
+This directory name (`-Users-guydvir-opportunity-radar-kits-cc-interproject-fixtures-forest-alpha`) is
 the forward encoding of the absolute path of `fixtures/forest/alpha` on the machine this fixture was
 built on, per `paths.encode_project_dir` (every `/` and `.` replaced by `-`). When a test copies
 `fixtures/forest/` into a temporary HOME, `alpha`'s absolute path changes, so this encoded name no

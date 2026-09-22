@@ -25,10 +25,10 @@ def kit_modules(installer: Path):
     checked here are the ones the shipped installer produces. Under `pytest tests/staging` the
     package is already imported from `src/`, which is the same code; leave that import alone.
     """
-    if "six_laws_kit" not in sys.modules:
+    if "cc_interproject" not in sys.modules:
         sys.path.insert(0, str(installer))
-    from six_laws_kit.run_state import Run
-    from six_laws_kit.wizard import api, terminal
+    from cc_interproject.run_state import Run
+    from cc_interproject.wizard import api, terminal
 
     return api, terminal, Run
 

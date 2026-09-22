@@ -3,8 +3,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from six_laws_kit.manifest import status
-from six_laws_kit.run_state import Run
+from cc_interproject.manifest import status
+from cc_interproject.run_state import Run
 
 
 def test_report_when_nothing_is_installed(tmp_path: Path):
@@ -16,7 +16,7 @@ def test_report_when_nothing_is_installed(tmp_path: Path):
 def test_report_lists_entries_and_head_counts(tmp_path: Path):
     # write_bytes, not write_text: text mode's universal-newline translation would turn "\n" into
     # "\r\n" on Windows, so the file's real bytes would no longer match the sha256 below.
-    target = tmp_path / "SIX_LAWS.md"
+    target = tmp_path / "INTERPROJECT_LAWS.md"
     target.write_bytes(b"law\n")
     sha = hashlib.sha256(b"law\n").hexdigest()
     manifest = {
@@ -35,7 +35,7 @@ def test_report_lists_entries_and_head_counts(tmp_path: Path):
 
 
 def test_report_flags_a_modified_entry(tmp_path: Path):
-    target = tmp_path / "SIX_LAWS.md"
+    target = tmp_path / "INTERPROJECT_LAWS.md"
     target.write_text("law\n", encoding="utf-8")
     manifest = {
         "entries": [{"kind": "created_file", "path": str(target), "sha256_after": "deadbeef"}],

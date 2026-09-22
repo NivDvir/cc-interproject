@@ -8,9 +8,9 @@ select = ["E", "F", "W", "I", "N", "UP", "SIM", "RET", "PIE", "TRY", "BLE", "C90
 max-complexity = 15
 
 [lint.per-file-ignores]
-"src/six_laws_kit/cli.py" = ["T20"]
-"src/six_laws_kit/wizard/terminal.py" = ["T20"]
-"src/six_laws_kit/hooks/*.py" = ["T20"]
+"src/cc_interproject/cli.py" = ["T20"]
+"src/cc_interproject/wizard/terminal.py" = ["T20"]
+"src/cc_interproject/hooks/*.py" = ["T20"]
 "tools/*.py" = ["T20"]
 "fixtures/claude_fake/claude" = ["T20"]
 

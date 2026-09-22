@@ -1,4 +1,4 @@
-"""Tests for six_laws_kit.wizard.terminal: the same install flow as tests/wizard/test_api.py's
+"""Tests for cc_interproject.wizard.terminal: the same install flow as tests/wizard/test_api.py's
 HTTP version, driven over scripted stdin instead. `fixtures/forest`'s three top-level projects
 come back from `discover.walk.find_projects` as `beta`, `dot-claude`, `alpha` in that order on
 this checkout (`alpha` alone has a subtree), so selecting "1 2" picks the two trees with no
@@ -12,10 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from six_laws_kit.heads import preflight
-from six_laws_kit.manifest import record
-from six_laws_kit.run_state import Run
-from six_laws_kit.wizard import terminal
+from cc_interproject.heads import preflight
+from cc_interproject.manifest import record
+from cc_interproject.run_state import Run
+from cc_interproject.wizard import terminal
 
 
 def _make_run(home: Path, mode: str = "install") -> Run:
@@ -49,7 +49,7 @@ def test_install_flow_selects_two_projects_and_writes_the_manifest(
     code = terminal.run(run)
 
     assert code == 0
-    manifest_path = forest_home / "dot-claude" / "six-laws.manifest.json"
+    manifest_path = forest_home / "dot-claude" / "interproject.manifest.json"
     assert manifest_path.is_file()
     manifest = record.load(manifest_path)
     self_heads = [head for head in manifest["heads"] if head["written_by"] == "self"]

@@ -1,10 +1,10 @@
-"""Tests for six_laws_kit.heads.packet: the packet wording, its schema, and the command line."""
+"""Tests for cc_interproject.heads.packet: the packet wording, its schema, and the command line."""
 
 from __future__ import annotations
 
 import json
 
-from six_laws_kit.heads import packet
+from cc_interproject.heads import packet
 
 
 def test_packet_wording_covers_the_required_phrases():

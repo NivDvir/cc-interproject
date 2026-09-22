@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from six_laws_kit.run_state import Row, Tree
-from six_laws_kit.write import registry
+from cc_interproject.run_state import Row, Tree
+from cc_interproject.write import registry
 
 HEADER = "# Project registry\n\nRead before any cross-project work.\n"
 
