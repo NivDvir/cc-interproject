@@ -15,3 +15,6 @@ behaviour). Everything public-facing (README, texts/, wizard copy) is approved b
 
 Working rules inherited from the parent: `../../.claude/DELEGATION.md` and the parent `CLAUDE.md`.
 Never run the installer for real on this machine from a session here; `--dry-run` only.
+This rule protects the owner's machine. A real install is allowed inside a disposable cloud sandbox
+(a Claude Code cloud session or routine) against a HOME built by `staging/build_home.py`, which is
+how the real-CLI checks in `docs/STAGING.md` are run. (Niv, 2026-09-22.)

@@ -39,7 +39,7 @@ python3 -m pytest tests/staging -q
 
 `e2e.py` uses `dist/install.py` when `tools/bundle.py --check` calls it current, else a fresh bundle in a temporary directory; it never writes into `dist/`.
 
-## Real-CLI checks (manual, owner-run)
+## Real-CLI checks (owner-run, or a disposable cloud sandbox)
 
 This costs one sonnet call. Claude Code reads its configuration from `$HOME/.claude`, so the staging
 HOME is chosen by setting `HOME`; `claude --help` at v2.1.268 documents no `CLAUDE_CONFIG_DIR`
