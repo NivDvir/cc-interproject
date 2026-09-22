@@ -118,7 +118,11 @@ discovered with it. The skip list and the directory cap still apply inside a fou
 project's own `node_modules`, `.venv` or `.claude/worktrees` are skipped however deep it goes.
 Session-dir encoding is lossy
 (`/`, `.`, `_` → `-`): always encode forward from the real path and match against the listing, never
-decode. `.md` written with `newline="\n"`; block-strip tolerates CRLF. On Linux without
+decode. `.md` written with `newline="\n"`; block-strip tolerates CRLF. The terminal UI's subtree
+connectors are box-drawing characters, so `wizard/terminal.py` test-encodes them against
+`sys.stdout.encoding` once and falls back to ASCII of the same widths (`|--`, `` `-- ``, `|   `)
+when they do not fit — a Windows console's default code page has none of them, and one
+`UnicodeEncodeError` on a print would end the install. On Linux without
 `DISPLAY`/`WAYLAND_DISPLAY`, or under WSL, go straight to the terminal UI; the URL is always printed.
 
 ## 8. Tests and CI
