@@ -81,6 +81,15 @@ the next time it runs a Claude Code session there, to replace the placeholder wi
 itself; the label then records who wrote the current text, `self`. A placeholder row a project
 never replaces stays usable; it is simply not authoritative.
 
+**Known limitation (v0.1.0):** the initial install path (a project's own head answering the
+registration call at install time) has been verified against the real Claude Code CLI, repeatedly,
+in a disposable cloud sandbox — see `docs/STAGING.md`. The later self-replacement path (a project
+that got a fallback `installer` row upgrading it to `self` on a subsequent session) has not, because
+that sandbox refuses any write under `.claude/` from its own agent as a "sensitive file" action,
+which the test needs to set up its starting condition. The mechanism is unchanged code exercised by
+the offline harness; if you hit a project that never upgrades its own row, please open an issue with
+the output of `--status`.
+
 ## The one manual step
 
 The account-level Instructions box (Settings → Account → Instructions for Claude) can only be
