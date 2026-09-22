@@ -1,6 +1,5 @@
 """Filesystem locations under `~/.claude` (or a `--root`'s `dot-claude` stand-in in tests),
-per-OS directory skip lists for the forest walk, `~/.claude/projects` name encoding, and the two
-helpers that build a hook's registered command.
+per-OS directory skip lists for the forest walk, and `~/.claude/projects` name encoding.
 """
 
 from __future__ import annotations
@@ -14,8 +13,6 @@ from pathlib import Path, PurePath
 
 KIT_NAME = "six-laws-kit"
 MANIFEST_NAME = "six-laws.manifest.json"
-HOOKS_SUBDIR = "hooks/six-laws"
-STATE_SUBDIR = "six-laws-state"
 BACKUPS_SUBDIR = "six-laws-backups"
 
 _BASE_SKIP_NAMES = {
@@ -56,8 +53,8 @@ def skip_names() -> set[str]:
 
     These are exact directory names, matched by name only — never a glob or pattern. `.claude`
     is included so the walk never descends into Claude Code's own state (worktree checkouts,
-    hooks, session transcripts) when it scans `$HOME`; the kit's own fixtures use `dot-claude` as
-    a stand-in for exactly this reason.
+    session transcripts) when it scans `$HOME`; the kit's own fixtures use `dot-claude` as a
+    stand-in for exactly this reason.
     """
     names = set(_BASE_SKIP_NAMES)
     if sys.platform.startswith("win"):
@@ -90,8 +87,7 @@ def home_dir() -> Path:
     sandboxing a run by setting only `HOME` (this repo's own end-to-end tests included) would
     otherwise land outside the sandbox there. Off Windows, `Path.home()` already honours `HOME`
     itself, so re-checking it here would only get in the way of a test that mocks `Path.home()`
-    directly. The standalone hooks under `hooks/` keep their own copy of this, since they may
-    import nothing from the package.
+    directly.
     """
     if sys.platform.startswith("win"):
         override = os.environ.get("HOME")
@@ -102,14 +98,6 @@ def home_dir() -> Path:
 
 def manifest_path(claude_dir: Path) -> Path:
     return claude_dir / MANIFEST_NAME
-
-
-def hooks_dir(claude_dir: Path) -> Path:
-    return claude_dir / HOOKS_SUBDIR
-
-
-def state_dir(claude_dir: Path) -> Path:
-    return claude_dir / STATE_SUBDIR
 
 
 def backups_dir(claude_dir: Path, stamp: str) -> Path:
@@ -130,20 +118,6 @@ def encode_project_dir(path: Path) -> list[str]:
         _ENCODE_DROP_UNDERSCORE.sub("-", posix),
         _ENCODE_KEEP_UNDERSCORE.sub("-", posix),
     ]
-
-
-def hook_interpreter() -> list[str]:
-    """Return the interpreter argv for running a hook script: the `py` launcher on Windows when
-    it is present, else `python3`.
-    """
-    if sys.platform.startswith("win") and shutil.which("py"):
-        return ["py", "-3"]
-    return ["python3"]
-
-
-def hook_command(interpreter: list[str], script: Path) -> str:
-    """Render the `settings.json` hook command string for `script`, quoted as a POSIX path."""
-    return " ".join([*interpreter, f'"{script.as_posix()}"'])
 
 
 def is_windows_shim(claude_bin: str) -> bool:

@@ -1,4 +1,4 @@
-"""The twelve actions behind the wizard's HTTP endpoints. Each takes the `Run`, mutates it under
+"""The eleven actions behind the wizard's HTTP endpoints. Each takes the `Run`, mutates it under
 `run.lock` where it must, and returns a plain dict the server serialises as JSON. The two long
 steps — the forest scan and the install — run on daemon threads and report through a lock-guarded
 progress dict that the page polls.
@@ -17,7 +17,6 @@ from six_laws_kit.run_state import Action, Run, Tree, selected_trees
 from six_laws_kit.texts import loader
 from six_laws_kit.write import apply as write_apply
 from six_laws_kit.write import plan as write_plan
-from six_laws_kit.write import settings
 
 UNINSTALL_COMMAND = "python3 install.py --uninstall"
 ACCOUNT_POINTER_SPLIT = "\n\n---"
@@ -30,20 +29,16 @@ _CLAUDE_VERSIONS: dict[str, str] = {}
 
 
 def state(run: Run) -> dict:
-    """The whole picture the page needs at any step: mode, modules, the scanned forest, and the
-    same-purpose hooks that decide whether Routing starts unticked.
-    """
+    """The whole picture the page needs at any step: mode, home, and the scanned forest."""
     with run.lock:
         payload = {
             "step": run.step,
             "mode": run.mode,
             "dry_run": run.mode == "dry-run",
             "home": str(run.home),
-            "modules": sorted(run.modules),
             "trees": [_tree_dict(tree) for tree in run.trees],
         }
     payload["claude_version"] = _claude_version(run)
-    payload["same_purpose_hooks"] = _same_purpose_hooks(run)
     return payload
 
 
@@ -73,18 +68,8 @@ def set_selection(run: Run, selected: list[str]) -> dict:
     """Apply the page's checked top-level paths; subtrees inherit their parent's selection."""
     with run.lock:
         count = forest.apply_selection(run.trees, set(selected))
-        run.step = "modules"
-    return {"selected": count}
-
-
-def set_modules(run: Run, modules: list[str]) -> dict:
-    """Store the chosen modules. `laws` is always installed, so an empty choice falls back to it."""
-    chosen = {name for name in modules if name}
-    with run.lock:
-        run.modules = chosen or {"laws"}
         run.step = "heads"
-        stored = sorted(run.modules)
-    return {"modules": stored}
+    return {"selected": count}
 
 
 def heads_start(run: Run) -> dict:
@@ -285,17 +270,8 @@ def _warnings(run: Run) -> list[str]:
             f"{borrowed} project(s) could not answer for themselves; their row was written from "
             "their own CLAUDE.md instead."
         )
-    if "routing" in run.modules:
-        existing = _same_purpose_hooks(run)
-        if existing:
-            warnings.append("Hooks with the same purpose are already registered: " + ", ".join(existing))
     warnings.extend(run.errors)
     return warnings
-
-
-def _same_purpose_hooks(run: Run) -> list[str]:
-    """Hook commands already registered for the same job as the kit's three."""
-    return settings.same_purpose_hooks(settings.load(run.claude_dir / "settings.json"))
 
 
 def _paste_block() -> str:

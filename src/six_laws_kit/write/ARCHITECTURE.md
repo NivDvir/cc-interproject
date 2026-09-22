@@ -12,10 +12,8 @@ which is the one place that touches the filesystem for this category.
   `plan.py` uses it for `PROJECT_REGISTRY.md` so a second install refreshes the table instead of
   appending a duplicate.
 - `registry.py` — renders `PROJECT_REGISTRY.md`'s table from the rows the Heads step collected.
-- `settings.py` — loads, previews, and idempotently merges the kit's three hook entries into a
-  `~/.claude/settings.json`-shaped dict, and removes them again on uninstall.
-- `plan.py` — `build(run)` walks every module the run wants installed and produces the ordered list
-  of `Action`s (each carrying its own in-memory unified diff); `render_text` prints them.
+- `plan.py` — `build(run)` produces the ordered list of `Action`s (each carrying its own in-memory
+  unified diff); `render_text` prints them.
 - `apply.py` — `execute(run, on_progress)` performs the plan: creates directories (tracked so
   uninstall can remove exactly the ones it made), backs up any pre-existing target, writes
   atomically, and records everything into the manifest that `manifest/record.py` defines. On a
@@ -23,7 +21,7 @@ which is the one place that touches the filesystem for this category.
   entries for targets an idempotent step skipped this run are not forgotten, then deduplicates by
   path (last write wins) before writing.
 
-Import rule (STYLE.md): only the stdlib, `run_state`, `paths`, sibling modules in this package, and
+Import rule (STYLE.md): only the stdlib, `run_state`, `paths`, this package's own siblings, and
 `texts.loader` — the one named exception, since `plan.build` is the sole place that turns the kit's
 shipped text files into `Action` payloads and the fixed `plan.build(run)` signature has nowhere else
 to receive that text from.

@@ -11,9 +11,8 @@ This file is a map, not a duplicate of either.
 | `discover/` | Walk `$HOME`, find projects (a directory with its own `CLAUDE.md`), build the forest, annotate with session history. |
 | `heads/` | Ask each chosen project's own `CLAUDE.md` for its registry row, headless, with a fallback path. |
 | `wizard/` | The local HTTP server and browser UI that drives the install flow; `terminal.py` mirrors it without a browser. |
-| `write/` | Turn a plan into file writes: registry, marked blocks, settings.json hook merges. |
+| `write/` | Turn a plan into file writes: the registry and the marked blocks. |
 | `manifest/` | Record what was written, and undo it on `--uninstall`. |
-| `hooks/` | Three standalone programs copied to `~/.claude/hooks/six-laws/`; each runs alone, no shared imports. |
 | `texts/` | The static public-text files the installer writes, plus the loader that reads them. |
 | `tools/` | Build- and repo-maintenance scripts, run by a human or CI, never by the installer. |
 
@@ -21,8 +20,7 @@ This file is a map, not a duplicate of either.
 
 A category imports only the stdlib, `run_state`, `paths`, and its own siblings. `cli.py` and
 `wizard/api.py` are the only places allowed to call across categories — they are the
-orchestrators. The three `hooks/` programs import nothing of ours at all: each is copied as a
-single file and must run standalone under `python3 <file>`.
+orchestrators.
 
 `tests/test_architecture.py` enforces this rule by inspecting imports; do not weaken it to make
 a shortcut compile.
@@ -42,10 +40,8 @@ a shortcut compile.
 | Actually writing files | `write/apply.py` |
 | Marked-block insertion and stripping | `write/blocks.py` |
 | `~/.claude/PROJECT_REGISTRY.md` assembly | `write/registry.py` |
-| `~/.claude/settings.json` hook merging | `write/settings.py` |
 | The manifest schema and writer | `manifest/record.py` |
 | `--uninstall` | `manifest/uninstall.py` |
 | `--status` | `manifest/status.py` |
-| The three installed hooks (packet reminder, labor tally, load cap) | `hooks/` |
 | Static text bodies (SIX_LAWS.md, protocol, etc.) | `texts/` |
 | The zipapp build | `tools/bundle.py`, `tools/ARCHITECTURE.md` |

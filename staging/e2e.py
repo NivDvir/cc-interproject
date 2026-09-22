@@ -36,11 +36,6 @@ ACCOUNT_FILES = (
     "PROJECT_REGISTRY.md",
     "six-laws.manifest.json",
 )
-HOOK_FILES = ("packet_reminder.py", "labor_tally.py", "load_cap.py", "PACKET_REMINDER.md")
-FOREIGN_COMMANDS = (
-    'bash "$HOME/.claude/my-hooks/format-on-write.sh"',
-    'bash "$HOME/.claude/my-hooks/prompt-log.sh"',
-)
 LEGACY_TAIL = "## Notes added after that block"
 
 
@@ -190,23 +185,22 @@ def step2_dry_run(installer: Path, home: Path, before: dict) -> tuple[bool, str]
 
 def step3_install(installer: Path, home: Path) -> tuple[bool, str]:
     """The real install, then every content check the plan promises."""
-    proc = run_installer(installer, home, ["--no-browser", "--root", str(home)], "all\ny\ny\n")
+    proc = run_installer(installer, home, ["--no-browser", "--root", str(home)], "all\ny\n")
     if proc.returncode != 0:
         return False, f"exit {proc.returncode}: {proc.stderr.strip()[-200:]}"
     checks = (
         _check_account_files,
         _check_account_claude_md,
-        _check_settings,
+        _check_settings_untouched,
         _check_registry,
         _check_blocks,
         _check_encoding_and_language,
         _check_manifest,
-        _check_hooks_dir,
     )
     problems = [reason for check in checks for ok, reason in [check(home)] if not ok]
     if problems:
         return False, f"{len(problems)} problem(s): " + "; ".join(problems)
-    return True, "six account files, 11 blocks, 3 kit hooks, registry all self"
+    return True, "six account files, 11 blocks, settings.json untouched, registry all self"
 
 
 def _check_account_files(home: Path) -> tuple[bool, str]:
@@ -227,36 +221,15 @@ def _check_account_claude_md(home: Path) -> tuple[bool, str]:
     return True, ""
 
 
-def _check_settings(home: Path) -> tuple[bool, str]:
-    original = json.loads(build_home.template("settings.json"))
-    current = json.loads((home / ".claude" / "settings.json").read_text(encoding="utf-8"))
-    for key in ("model", "env", "permissions", "includeCoAuthoredBy"):
-        if current.get(key) != original.get(key):
-            return False, f"settings.json {key} changed"
-    commands = _all_hook_commands(current)
-    for foreign in FOREIGN_COMMANDS:
-        if commands.count(foreign) != 1:
-            return False, f"foreign hook lost or duplicated: {foreign}"
-    kit = [c for c in commands if "six-laws" in c]
-    if len(kit) != 3:
-        return False, f"expected 3 kit hooks, found {len(kit)}"
-    events = {event for event, command in _hook_pairs(current) if "six-laws" in command}
-    if events != {"UserPromptSubmit", "Stop", "PreToolUse"}:
-        return False, f"kit hooks registered on the wrong events: {sorted(events)}"
+def _check_settings_untouched(home: Path) -> tuple[bool, str]:
+    """The installer must leave `.claude/settings.json` exactly as the builder wrote it, byte for
+    byte — the user's own model, env, permissions and their own registered commands alike.
+    """
+    expected = build_home.settings_bytes()
+    current = (home / ".claude" / "settings.json").read_bytes()
+    if current != expected:
+        return False, f".claude/settings.json changed: {len(expected)} bytes -> {len(current)}"
     return True, ""
-
-
-def _hook_pairs(settings: dict) -> list:
-    pairs = []
-    for event, groups in (settings.get("hooks") or {}).items():
-        for group in groups:
-            for hook in group.get("hooks", []):
-                pairs.append((event, hook.get("command", "")))
-    return pairs
-
-
-def _all_hook_commands(settings: dict) -> list:
-    return [command for _event, command in _hook_pairs(settings)]
 
 
 def _check_registry(home: Path) -> tuple[bool, str]:
@@ -307,26 +280,15 @@ def _check_manifest(home: Path) -> tuple[bool, str]:
     entries = manifest.get("entries", [])
     created = {entry["path"] for entry in entries if entry["kind"] == "created_file"}
     expected_created = {str(home / ".claude" / name) for name in ACCOUNT_FILES if "manifest" not in name}
-    expected_created |= {str(home / ".claude/hooks/six-laws" / name) for name in HOOK_FILES}
     if not expected_created <= created:
         return False, f"manifest is missing created_file entries: {sorted(expected_created - created)}"
     blocks = [entry for entry in entries if entry["kind"] == "inserted_block"]
     if len(blocks) != len(EXPECTED_PROJECTS) - 1:
         return False, f"manifest records {len(blocks)} inserted blocks, expected 11"
-    if not any(entry["kind"] == "settings_hooks" for entry in entries):
-        return False, "manifest has no settings_hooks entry"
     if not any(entry["kind"] == "backup" for entry in entries):
         return False, "manifest has no backup entry for the account CLAUDE.md"
     if len(manifest.get("heads", [])) != len(EXPECTED_PROJECTS):
         return False, f"manifest records {len(manifest.get('heads', []))} heads, expected 12"
-    return True, ""
-
-
-def _check_hooks_dir(home: Path) -> tuple[bool, str]:
-    hooks = home / ".claude/hooks/six-laws"
-    present = sorted(p.name for p in hooks.iterdir()) if hooks.is_dir() else []
-    if present != sorted(HOOK_FILES):
-        return False, f"hooks dir holds {present}, expected {sorted(HOOK_FILES)}"
     return True, ""
 
 
@@ -344,21 +306,20 @@ def step4_status(installer: Path, home: Path) -> tuple[bool, str]:
 def step5_idempotence(installer: Path, home: Path) -> tuple[bool, str]:
     """A second identical install must change nothing that the first one wrote."""
     registry_before = (home / ".claude" / "PROJECT_REGISTRY.md").read_text(encoding="utf-8")
-    proc = run_installer(installer, home, ["--no-browser", "--root", str(home)], "all\ny\ny\n")
+    proc = run_installer(installer, home, ["--no-browser", "--root", str(home)], "all\ny\n")
     if proc.returncode != 0:
         return False, f"exit {proc.returncode}: {proc.stderr.strip()[-200:]}"
     ok, reason = _check_blocks(home)
     if not ok:
         return False, f"re-install duplicated a block: {reason}"
-    commands = _all_hook_commands(json.loads((home / ".claude/settings.json").read_text("utf-8")))
-    duplicated = [c for c in set(commands) if commands.count(c) > 1]
-    if duplicated:
-        return False, f"re-install duplicated hooks: {duplicated}"
+    ok, reason = _check_settings_untouched(home)
+    if not ok:
+        return False, f"re-install touched settings.json: {reason}"
     registry_after = (home / ".claude" / "PROJECT_REGISTRY.md").read_text(encoding="utf-8")
     rows_before, rows_after = registry_rows(registry_before, home), registry_rows(registry_after, home)
     if rows_after != rows_before:
         return False, f"registry rows changed: {len(rows_before)} -> {len(rows_after)}"
-    return True, "no duplicated blocks, hooks or registry rows"
+    return True, "no duplicated blocks or registry rows"
 
 
 def step6_uninstall(installer: Path, home: Path, before: dict) -> tuple[bool, str]:
@@ -369,11 +330,6 @@ def step6_uninstall(installer: Path, home: Path, before: dict) -> tuple[bool, st
     drift = compare(before, snapshot(home), ignore_prefix=BACKUPS_PREFIX)
     if drift:
         return False, f"{len(drift)} files differ from the pre-install snapshot, e.g. {drift[:4]}"
-    leftovers = [
-        str(home / name) for name in (".claude/hooks/six-laws", ".claude/hooks") if (home / name).exists()
-    ]
-    if leftovers:
-        return False, f"empty kit directories left behind: {leftovers}"
     return True, "every file restored, no kit directories left"
 
 

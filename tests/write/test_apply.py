@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import json
-import os
-import stat
 from pathlib import Path
 
 import pytest
@@ -20,7 +17,6 @@ _TEXTS = {
     "REGISTRY_HEADER.md": "# Project registry\n\nRead before any cross-project work.\n",
     "ACCOUNT_POINTER.md": "Read the six laws before any cross-project work.\n\n---\n\nmore prose here.\n",
     "PROJECT_POINTER.md": "Reach other projects only through their heads.\n",
-    "PACKET_REMINDER.md": "Packet reminder text.\n",
 }
 
 
@@ -29,10 +25,8 @@ def _fake_texts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("six_laws_kit.texts.loader.read", lambda name: _TEXTS[name])
 
 
-def _make_run(home: Path, modules: set) -> Run:
-    run = Run(
-        mode="install", home=home, claude_dir=home / "dot-claude", root=home, no_browser=True, modules=modules
-    )
+def _make_run(home: Path) -> Run:
+    run = Run(mode="install", home=home, claude_dir=home / "dot-claude", root=home, no_browser=True)
     alpha = Tree(path=home / "alpha", name="Alpha", claude_md=home / "alpha" / "CLAUDE.md", selected=True)
     beta = Tree(path=home / "beta", name="Beta", claude_md=home / "beta" / "CLAUDE.md", selected=True)
     run.trees = [alpha, beta]
@@ -40,7 +34,7 @@ def _make_run(home: Path, modules: set) -> Run:
 
 
 def test_execute_writes_files_and_a_matching_manifest(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     plan.build(run)
     progress_calls = []
     manifest_path = apply.execute(
@@ -64,36 +58,10 @@ def test_execute_writes_files_and_a_matching_manifest(forest_home: Path):
     assert "backup" in kinds
 
 
-def test_execute_chmods_hook_files_on_posix(forest_home: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(plan, "_read_hook_source", lambda name: "#!/usr/bin/env python3\nprint('hi')\n")
-    run = _make_run(forest_home, {"laws", "routing"})
-    plan.build(run)
-    apply.execute(run, lambda *_args: None)
-
-    hook_path = paths.hooks_dir(run.claude_dir) / "packet_reminder.py"
-    assert hook_path.exists()
-    if os.name != "nt":
-        assert stat.S_IMODE(hook_path.stat().st_mode) == 0o755
-
-
-def test_execute_merges_settings_and_keeps_the_foreign_hook(
-    forest_home: Path, monkeypatch: pytest.MonkeyPatch
-):
-    monkeypatch.setattr(plan, "_read_hook_source", lambda name: "#!/usr/bin/env python3\n")
-    run = _make_run(forest_home, {"laws", "routing"})
-    plan.build(run)
-    apply.execute(run, lambda *_args: None)
-
-    data = json.loads((run.claude_dir / "settings.json").read_text(encoding="utf-8"))
-    assert data["hooks"]["PostToolUse"][0]["hooks"][0]["command"] == "echo foreign"
-    assert "UserPromptSubmit" in data["hooks"]
-    assert "PreToolUse" in data["hooks"]
-
-
 def test_execute_writes_the_manifest_so_far_and_reraises_on_os_error(
     forest_home: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     plan.build(run)
     original_write_atomic = apply._write_atomic
     calls = {"n": 0}

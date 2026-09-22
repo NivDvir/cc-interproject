@@ -18,7 +18,6 @@
     <ol class="step-bar" id="step-bar">
       <li class="step" data-step-item="welcome"><svg class="step-icon"><use href="#icon-welcome"></use></svg><span class="step-label">Welcome</span></li>
       <li class="step" data-step-item="scan"><svg class="step-icon"><use href="#icon-scan"></use></svg><span class="step-label">Scan</span></li>
-      <li class="step" data-step-item="modules"><svg class="step-icon"><use href="#icon-modules"></use></svg><span class="step-label">Modules</span></li>
       <li class="step" data-step-item="heads"><svg class="step-icon"><use href="#icon-heads"></use></svg><span class="step-label">Register heads</span></li>
       <li class="step" data-step-item="review"><svg class="step-icon"><use href="#icon-review"></use></svg><span class="step-label">Review</span></li>
       <li class="step" data-step-item="install"><svg class="step-icon"><use href="#icon-install"></use></svg><span class="step-label">Install</span></li>
@@ -51,28 +50,6 @@
       </div>
       <div class="step-actions">
         <button type="button" class="btn btn-primary" id="btn-scan-next" disabled>Next</button>
-      </div>
-    </section>
-
-    <!-- MODULES -->
-    <section data-step="modules" hidden aria-labelledby="modules-h">
-      <h2 id="modules-h">Choose modules</h2>
-      <fieldset class="modules">
-        <legend>What to install</legend>
-        <div class="module-row">
-          <input type="checkbox" id="mod-laws" checked disabled aria-describedby="mod-laws-desc">
-          <label for="mod-laws" class="module-name">Six laws</label>
-          <span class="module-desc" id="mod-laws-desc">The shared ownership and communication rules. Always installed.</span>
-        </div>
-        <div class="module-row">
-          <input type="checkbox" id="mod-routing" checked aria-describedby="mod-routing-desc">
-          <label for="mod-routing" class="module-name">Routing policy and hooks</label>
-          <span class="module-desc" id="mod-routing-desc">Delegates mechanical steps to a worker model and tracks it with two small hooks.</span>
-        </div>
-      </fieldset>
-      <p class="note" id="modules-conflict-note" hidden></p>
-      <div class="step-actions">
-        <button type="button" class="btn btn-primary" id="btn-modules-next">Continue</button>
       </div>
     </section>
 

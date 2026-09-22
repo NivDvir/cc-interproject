@@ -24,7 +24,6 @@ def report(manifest: dict | None, claude_dir: Path) -> str:
         return f"six-laws-kit: not installed under {claude_dir}\n"
     lines = [
         f"six-laws-kit {manifest.get('kit_version', '?')} installed {manifest.get('installed_at', '?')}",
-        f"modules: {', '.join(manifest.get('modules', []))}",
         "",
         "entries:",
     ]

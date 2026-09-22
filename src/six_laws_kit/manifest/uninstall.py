@@ -1,8 +1,7 @@
 """`run(run, restore_backups, ask)` loads the manifest under `run.claude_dir` and undoes its
 `entries[]` in reverse, per DESIGN.md §5: delete an unmodified created file (else ask); strip an
 unmodified marker block and undo its recorded blank-line/trailing-newline addition (report if it
-was modified since, leave alone if the markers are gone); remove exactly the hook dicts this kit
-added from `settings.json`, never rewriting the rest of the file; restore a plain appended line's
+was modified since, leave alone if the markers are gone); restore a plain appended line's
 pre-install bytes from its backup when unmodified (else ask). `--restore-backups` runs a second,
 blunter pass that copies every file under the manifest's `backup_dir` back over its original
 location.
@@ -11,7 +10,6 @@ location.
 from __future__ import annotations
 
 import contextlib
-import json
 import os
 import sys
 from pathlib import Path
@@ -20,7 +18,7 @@ from typing import Callable
 from six_laws_kit import paths
 from six_laws_kit.manifest import record
 from six_laws_kit.run_state import Run
-from six_laws_kit.write import blocks, settings
+from six_laws_kit.write import blocks
 
 
 def run(run: Run, restore_backups: bool = False, ask: Callable[[str], bool] | None = None) -> int:
@@ -53,8 +51,6 @@ def _undo_entry(entry: dict, ask: Callable[[str], bool]) -> None:
         _undo_created_file(entry, ask)
     elif kind == "inserted_block":
         _undo_inserted_block(entry)
-    elif kind == "settings_hooks":
-        _undo_settings_hooks(entry)
     elif kind == "backup":
         _undo_backup(entry, ask)
     elif kind == "created_dir":
@@ -108,16 +104,6 @@ def _trim_one_trailing_newline(text: str) -> str:
     if text.endswith("\n"):
         return text[:-1]
     return text
-
-
-def _undo_settings_hooks(entry: dict) -> None:
-    path = Path(entry["path"])
-    if not path.exists():
-        return
-    current = settings.load(path)
-    commands = [added["command"] for added in entry.get("added", [])]
-    new_settings = settings.remove_hooks(current, commands)
-    _write_atomic(path, json.dumps(new_settings, indent=2) + "\n")
 
 
 def _undo_backup(entry: dict, ask: Callable[[str], bool]) -> None:

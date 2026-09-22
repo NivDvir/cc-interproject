@@ -93,6 +93,13 @@ def template(name: str) -> str:
     return (TEMPLATES / name).read_text(encoding="utf-8")
 
 
+def settings_bytes() -> bytes:
+    """The exact bytes `_dot_claude` writes to `.claude/settings.json`. `e2e.py` compares the
+    installed tree against this to prove the installer never rewrote the user's own file.
+    """
+    return (json.dumps(json.loads(template("settings.json")), indent=2) + "\n").encode("utf-8")
+
+
 def write_text(path: Path, text: str, *, crlf: bool = False, bom: bool = False) -> None:
     """Write `text` to `path`, creating parents. `crlf` and `bom` model a Windows-authored file."""
     path.parent.mkdir(parents=True, exist_ok=True)

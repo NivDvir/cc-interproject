@@ -73,15 +73,11 @@ def test_status_under_temp_home_exits_0(archive_path, tmp_path):
 
 
 def test_dry_run_against_forest_fixture_exits_0(archive_path, forest_home):
-    # "n" declines the routing module: write/plan.py's _read_hook_source (write/plan.py:157) reads
-    # the hooks/ source files with a raw Path(__file__) join, which cannot see into a zipapp; see
-    # the worker's reply for the file:line. Selecting "laws" only avoids that path, same as the
-    # project's own CI smoke test (`--modules laws`) already does.
     result = _run(
         archive_path,
         ["--dry-run", "--no-browser", "--root", str(forest_home)],
         forest_home,
-        stdin="all\nn\n",
+        stdin="all\n",
     )
     assert result.returncode == 0, result.stderr
 

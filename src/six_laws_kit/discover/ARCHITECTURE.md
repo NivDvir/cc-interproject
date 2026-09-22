@@ -19,5 +19,5 @@ package calls into `wizard/`, `heads/`, `write/`, or `manifest/`.
 
 ## Import rule
 
-Only the stdlib and the package-root modules `run_state` and `paths` (see `STYLE.md`). No
+Only the stdlib and the package-root files `run_state` and `paths` (see `STYLE.md`). No
 imports between `discover/` and any other category.

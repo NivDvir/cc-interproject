@@ -47,7 +47,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--no-browser", action="store_true", help="Skip the browser UI; use the terminal.")
     parser.add_argument("--root", metavar="DIR", help="Scan root other than $HOME (testing).")
-    parser.add_argument("--modules", metavar="laws,routing", help="Comma-separated modules to install.")
     return parser
 
 

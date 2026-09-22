@@ -3,8 +3,8 @@
 `write/apply.py:28` starts every run from `manifest.record.new(...)`, an empty `entries` list, and
 overwrites `~/.claude/six-laws.manifest.json` at the end. On a re-install the idempotent steps
 record nothing (`write/apply.py:_apply_create_file` returns early when the file already exists,
-`_apply_insert_block` and `_apply_merge_hooks` return early when their diff is empty), so the new
-manifest forgets the law files, the pointer blocks, the settings hooks and the account pointer
+`_apply_insert_block` returns early when its diff is empty), so the new manifest forgets the law
+files, the pointer blocks and the account pointer
 line. A later `--uninstall` then leaves all of them on disk.
 """
 

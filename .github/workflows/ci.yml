@@ -62,7 +62,7 @@ jobs:
           FOREST="$(mktemp -d)/forest"
           cp -R fixtures/forest "$FOREST"
           printf 'all\n' | python dist/install.py --dry-run --no-browser \
-            --root "$FOREST" --modules laws | tee out.txt
+            --root "$FOREST" | tee out.txt
           grep -q "Dry run: nothing written." out.txt
 
       - name: Upload bundled installer

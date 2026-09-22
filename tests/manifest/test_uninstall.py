@@ -18,20 +18,16 @@ _TEXTS = {
     "REGISTRY_HEADER.md": "# Project registry\n\nRead before any cross-project work.\n",
     "ACCOUNT_POINTER.md": "Read the six laws before any cross-project work.\n\n---\n\nmore prose here.\n",
     "PROJECT_POINTER.md": "Reach other projects only through their heads.\n",
-    "PACKET_REMINDER.md": "Packet reminder text.\n",
 }
 
 
 @pytest.fixture(autouse=True)
 def _fake_texts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("six_laws_kit.texts.loader.read", lambda name: _TEXTS[name])
-    monkeypatch.setattr(plan, "_read_hook_source", lambda name: f"#!/usr/bin/env python3\n# fake {name}\n")
 
 
-def _make_run(home: Path, modules: set) -> Run:
-    run = Run(
-        mode="install", home=home, claude_dir=home / "dot-claude", root=home, no_browser=True, modules=modules
-    )
+def _make_run(home: Path) -> Run:
+    run = Run(mode="install", home=home, claude_dir=home / "dot-claude", root=home, no_browser=True)
     alpha = Tree(path=home / "alpha", name="Alpha", claude_md=home / "alpha" / "CLAUDE.md", selected=True)
     beta = Tree(path=home / "beta", name="Beta", claude_md=home / "beta" / "CLAUDE.md", selected=True)
     run.trees = [alpha, beta]
@@ -60,7 +56,7 @@ def _refuse_ask(message: str) -> bool:
 def test_apply_then_uninstall_leaves_the_tree_byte_identical(forest_home: Path):
     before = _hash_tree(forest_home)
 
-    run = _make_run(forest_home, {"laws", "routing"})
+    run = _make_run(forest_home)
     plan.build(run)
     apply.execute(run, lambda *_args: None)
     assert _hash_tree(forest_home) != before, "install should have changed something"
@@ -72,36 +68,68 @@ def test_apply_then_uninstall_leaves_the_tree_byte_identical(forest_home: Path):
     assert _hash_tree(forest_home) == before
 
 
-def test_round_trip_removes_the_directories_the_install_created(forest_home: Path):
-    run = _make_run(forest_home, {"laws", "routing"})
-    hooks_dir = paths.hooks_dir(run.claude_dir)
-    assert not hooks_dir.exists()
-    assert not hooks_dir.parent.exists()
+def _make_fresh_run(home: Path) -> Run:
+    """A run whose `claude_dir` does not exist yet, two levels below `home`, so the install has to
+    create both levels and record them.
+    """
+    return Run(
+        mode="install",
+        home=home,
+        claude_dir=home / "nested" / "dot-claude",
+        root=home,
+        no_browser=True,
+    )
 
+
+def test_install_records_every_directory_it_created(forest_home: Path):
+    run = _make_fresh_run(forest_home)
+    alpha = forest_home / "alpha"
+    run.trees = [Tree(path=alpha, name="Alpha", claude_md=alpha / "CLAUDE.md", selected=True)]
     plan.build(run)
     apply.execute(run, lambda *_args: None)
-    assert hooks_dir.is_dir()
 
     manifest = record.load(paths.manifest_path(run.claude_dir))
     created_dirs = {Path(entry["path"]) for entry in manifest["entries"] if entry["kind"] == "created_dir"}
-    assert hooks_dir in created_dirs
-    assert hooks_dir.parent in created_dirs
-    assert run.claude_dir not in created_dirs, "dot-claude already existed; must not be tracked"
+    assert run.claude_dir in created_dirs
+    assert run.claude_dir.parent in created_dirs
+    assert forest_home not in created_dirs, "a directory that already existed must not be tracked"
 
-    uninstall.run(run, ask=_refuse_ask)
 
-    assert not hooks_dir.exists()
-    assert not hooks_dir.parent.exists(), "the now-empty hooks/ parent should be removed too"
-    assert run.claude_dir.exists(), "a directory the install did not create must survive uninstall"
+def test_uninstall_removes_a_created_directory_once_it_is_empty(forest_home: Path):
+    """A `created_dir` entry is undone after the files inside it, deepest first, and only while
+    the directory is empty.
+    """
+    run = _make_run(forest_home)
+    made = forest_home / "made" / "deep"
+    made.mkdir(parents=True)
+    target = made / "SIX_LAWS.md"
+    target.write_text(_TEXTS["SIX_LAWS.md"], encoding="utf-8")
+    record.write(
+        {
+            "schema": 1,
+            "entries": [
+                {"kind": "created_dir", "path": str(made.parent)},
+                {"kind": "created_dir", "path": str(made)},
+                {"kind": "created_file", "path": str(target), "sha256_after": record.sha256(target)},
+            ],
+        },
+        paths.manifest_path(run.claude_dir),
+    )
+
+    assert uninstall.run(run, ask=_refuse_ask) == 0
+
+    assert not made.exists()
+    assert not made.parent.exists(), "the now-empty parent should be removed too"
+    assert forest_home.exists(), "a directory the install did not create must survive uninstall"
 
 
 def test_uninstall_with_no_manifest_reports_and_returns_zero(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     assert uninstall.run(run, ask=_refuse_ask) == 0
 
 
 def test_uninstall_asks_before_touching_a_file_modified_since_install(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     plan.build(run)
     apply.execute(run, lambda *_args: None)
 
@@ -129,7 +157,7 @@ def test_restore_backups_flag_restores_files_the_default_pass_could_not(forest_h
     dot_claude_md = forest_home / "dot-claude" / "CLAUDE.md"
     original_pre_install = dot_claude_md.read_text(encoding="utf-8")
 
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     plan.build(run)
     apply.execute(run, lambda *_args: None)
     assert dot_claude_md.read_text(encoding="utf-8") != original_pre_install
@@ -142,7 +170,7 @@ def test_restore_backups_flag_restores_files_the_default_pass_could_not(forest_h
 
 
 def test_record_new_backup_dir_matches_where_apply_wrote_backups(forest_home: Path):
-    run = _make_run(forest_home, {"laws"})
+    run = _make_run(forest_home)
     plan.build(run)
     apply.execute(run, lambda *_args: None)
     manifest = record.load(paths.manifest_path(run.claude_dir))

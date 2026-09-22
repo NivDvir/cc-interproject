@@ -13,7 +13,6 @@ current entry.
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 import shutil
 import sys
@@ -24,7 +23,7 @@ from typing import Callable
 from six_laws_kit import paths
 from six_laws_kit.manifest import record
 from six_laws_kit.run_state import Action, Run
-from six_laws_kit.write import blocks, settings
+from six_laws_kit.write import blocks
 from six_laws_kit.write.plan import MARKER_VERSION
 
 
@@ -52,27 +51,16 @@ def execute(run: Run, on_progress: Callable[[str, int, int], None]) -> Path:
 def _apply_action(run: Run, action: Action, stamp: str, manifest: dict) -> None:
     if action.kind == "create_file":
         _apply_create_file(action, manifest)
-    elif action.kind == "copy_hook_file":
-        _apply_copy_hook_file(action, manifest)
     elif action.kind == "append_line":
         _apply_append_line(run, action, stamp, manifest)
     elif action.kind == "insert_block":
         _apply_insert_block(run, action, stamp, manifest)
-    elif action.kind == "merge_hooks":
-        _apply_merge_hooks(run, action, stamp, manifest)
 
 
 def _apply_create_file(action: Action, manifest: dict) -> None:
     if action.existed:
         return
     _write_atomic(action.target, action.payload, manifest)
-    record.add_entry(manifest, _created_file_entry(action.target))
-
-
-def _apply_copy_hook_file(action: Action, manifest: dict) -> None:
-    _write_atomic(action.target, action.payload, manifest)
-    if os.name != "nt":
-        os.chmod(action.target, 0o755)
     record.add_entry(manifest, _created_file_entry(action.target))
 
 
@@ -117,28 +105,6 @@ def _apply_insert_block(run: Run, action: Action, stamp: str, manifest: dict) ->
 def _insert_flags(existing_text: str) -> tuple[bool, bool]:
     _new_text, leading_blank_added, trailing_newline_added = blocks.insert(existing_text, "")
     return leading_blank_added, trailing_newline_added
-
-
-def _apply_merge_hooks(run: Run, action: Action, stamp: str, manifest: dict) -> None:
-    if not action.diff:
-        return
-    _make_backup(run, action.target, stamp, record_entry=False)
-    additions = json.loads(action.payload)
-    before = settings.load(action.target)
-    before_text = json.dumps(before, indent=2) + "\n" if before else "{}\n"
-    after, added = settings.merge_hooks(before, additions)
-    after_text = json.dumps(after, indent=2) + "\n"
-    _write_atomic(action.target, after_text, manifest)
-    record.add_entry(
-        manifest,
-        {
-            "kind": "settings_hooks",
-            "path": str(action.target),
-            "sha256_before": _sha256_text(before_text),
-            "sha256_after": record.sha256(action.target),
-            "added": added,
-        },
-    )
 
 
 def _created_file_entry(target: Path) -> dict:

@@ -1,6 +1,4 @@
-"""Tests for paths.py: skip lists, directory helpers, project-dir encoding, and hook command
-rendering.
-"""
+"""Tests for paths.py: skip lists, directory helpers, and project-dir encoding."""
 
 from __future__ import annotations
 
@@ -41,11 +39,9 @@ def test_skip_names_adds_windows_extras_only_on_windows():
         assert "AppData" not in names
 
 
-def test_manifest_hooks_state_backups_paths(tmp_path):
+def test_manifest_and_backups_paths(tmp_path):
     claude_dir = tmp_path / ".claude"
     assert paths.manifest_path(claude_dir) == claude_dir / "six-laws.manifest.json"
-    assert paths.hooks_dir(claude_dir) == claude_dir / "hooks" / "six-laws"
-    assert paths.state_dir(claude_dir) == claude_dir / "six-laws-state"
     assert paths.backups_dir(claude_dir, "2026-09-22") == claude_dir / "six-laws-backups" / "2026-09-22"
 
 
@@ -63,13 +59,3 @@ def test_encode_project_dir_keeps_underscore_variant():
 def test_encode_project_dir_windows_style_path():
     encodings = paths.encode_project_dir(PureWindowsPath("C:\\Users\\x\\proj"))
     assert any(name.endswith("Users-x-proj") for name in encodings)
-
-
-def test_hook_command_quotes_the_script_path():
-    command = paths.hook_command(["python3"], Path("/opt/six laws/hook.py"))
-    assert command == 'python3 "/opt/six laws/hook.py"'
-
-
-def test_hook_command_joins_multi_part_interpreter():
-    command = paths.hook_command(["py", "-3"], Path("/opt/hook.py"))
-    assert command == 'py -3 "/opt/hook.py"'

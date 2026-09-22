@@ -12,12 +12,12 @@ from pathlib import Path
 
 PACKAGE = "six_laws_kit"
 SRC_ROOT = Path(__file__).resolve().parent.parent / "src" / PACKAGE
-CATEGORY_DIRS = {"discover", "heads", "wizard", "write", "manifest", "hooks", "texts"}
+CATEGORY_DIRS = {"discover", "heads", "wizard", "write", "manifest", "texts"}
 ALWAYS_ALLOWED = {"run_state", "paths"}
 FULL_ACCESS_MODULES = {"cli", "wizard.api"}
 MODULE_EXCEPTIONS = {
     "write.apply": {"manifest.record"},
-    "manifest.uninstall": {"write.blocks", "write.settings"},
+    "manifest.uninstall": {"write.blocks"},
 }
 CATEGORY_EXCEPTIONS = {("write", "texts")}
 WARN_LINES = 400
@@ -100,11 +100,6 @@ def test_import_rule_is_respected():
         if not module_name or module_name == "__main__":
             continue
         imports = _package_imports(path)
-        if _category_of(module_name) == "hooks":
-            if imports:
-                found = sorted(imports)
-                violations.append(f"{path}: hooks/* must import nothing from the package, found {found}")
-            continue
         for imported in imports:
             if not _allowed(module_name, imported):
                 violations.append(f"{path}: '{module_name}' may not import '{imported}'")

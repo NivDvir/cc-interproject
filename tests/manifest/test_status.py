@@ -22,7 +22,6 @@ def test_report_lists_entries_and_head_counts(tmp_path: Path):
     manifest = {
         "kit_version": "0.1.0",
         "installed_at": "2026-01-01T00:00:00Z",
-        "modules": ["laws", "routing"],
         "entries": [{"kind": "created_file", "path": str(target), "sha256_after": sha}],
         "heads": [
             {"path": "/home/alpha", "written_by": "self", "status": "ok"},
@@ -31,7 +30,6 @@ def test_report_lists_entries_and_head_counts(tmp_path: Path):
     }
     text = status.report(manifest, tmp_path)
     assert "0.1.0" in text
-    assert "laws, routing" in text
     assert "(unchanged)" in text
     assert "self: 1  installer: 1" in text
 

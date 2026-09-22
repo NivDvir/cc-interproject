@@ -15,8 +15,6 @@ A fake HOME for `discover/walk.py` and `discover/forest.py`.
 - `gamma/README.md` — a project folder with documentation but no `CLAUDE.md`; must never be discovered.
 - `.Trash/old/CLAUDE.md` — proves directories under `.Trash` are skipped entirely.
 - `dot-claude/CLAUDE.md` — stands in for `~/.claude/CLAUDE.md`; a top-level root like any other.
-- `dot-claude/settings.json` — one pre-existing foreign hook (`echo foreign` on `PostToolUse`/`Bash`)
-  that install and uninstall must never touch or remove.
 - `dot-claude/projects/<encoded alpha>/<uuid>.jsonl` — a session transcript for `alpha`, used by
   `discover/sessions.py` to set `has_session`/`last_session`. See
   `fixtures/forest/dot-claude/projects/README.md` for why the encoded directory name must be
@@ -25,18 +23,6 @@ A fake HOME for `discover/walk.py` and `discover/forest.py`.
 Every `CLAUDE.md` here (other than the two vendored-material ones, which exist only to prove they are
 skipped) has a `# <Name>` heading and one or two prose paragraphs about a made-up project, so the
 fallback row extractor (`heads/fallback.py`) has real material to read.
-
-## fixtures/transcripts/
-
-Claude Code transcript shapes for the `hooks/labor_tally.py` Stop hook.
-
-- `head_turn.jsonl` — an opening user message (no `tool_result`) followed by assistant `tool_use`
-  blocks (Read x7, Bash x3, Agent x1), each interleaved with a `tool_result` user message, every line
-  `isSidechain: false`. A correct tally reads `Read×7 Bash×3 Delegate×1`.
-- `worker_turn.jsonl` — the identical shape, but every line is `isSidechain: true`, proving a
-  sub-agent's turn is never tallied as a head turn.
-- `malformed.jsonl` — a run of valid lines from `head_turn.jsonl`, then one truncated JSON line and
-  one empty line, then one more valid line; proves the tally skips bad lines instead of crashing.
 
 ## fixtures/claude_fake/
 
