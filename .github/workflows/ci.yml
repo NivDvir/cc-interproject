@@ -29,7 +29,15 @@ jobs:
 
       - name: Put fake claude on PATH
         shell: bash
-        run: echo "$PWD/fixtures/claude_fake" >> "$GITHUB_PATH"
+        run: |
+          # Git Bash's own $PWD is an MSYS path (e.g. /d/a/...): native Windows Python's
+          # shutil.which cannot resolve that against PATH. `pwd -W` (a Git Bash builtin) prints
+          # the same directory as a drive-letter path instead, which resolves on every OS here.
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            echo "$(pwd -W)/fixtures/claude_fake" >> "$GITHUB_PATH"
+          else
+            echo "$PWD/fixtures/claude_fake" >> "$GITHUB_PATH"
+          fi
 
       - name: Install dev tools
         run: python -m pip install ruff pytest
