@@ -2,6 +2,12 @@
 target under the manifest's backup directory, writes every change atomically, and records enough
 in the manifest (via `manifest.record`) for `manifest.uninstall` to undo it later. On any `OSError`
 mid-run, the manifest is written with whatever it has recorded so far, then the error is re-raised.
+
+A re-install starts from the previous manifest (`record.new(..., previous=...)`) rather than a
+blank one, so idempotent steps that record nothing this run (a law file already there, a pointer
+block already present) do not make the second install's manifest forget the first install's files;
+entries are deduplicated by path before writing, so a target this run did rewrite keeps only its
+current entry.
 """
 
 from __future__ import annotations
@@ -25,8 +31,9 @@ from six_laws_kit.write.plan import MARKER_VERSION
 def execute(run: Run, on_progress: Callable[[str, int, int], None]) -> Path:
     """Apply every action in `run.plan`, write the manifest, and return its path."""
     stamp = _stamp()
-    manifest = record.new(run, stamp)
     manifest_path = paths.manifest_path(run.claude_dir)
+    previous = record.load(manifest_path)
+    manifest = record.new(run, stamp, previous=previous)
     total = len(run.plan)
     try:
         for completed, action in enumerate(run.plan, start=1):
@@ -34,8 +41,10 @@ def execute(run: Run, on_progress: Callable[[str, int, int], None]) -> Path:
             on_progress(str(action.target), completed, total)
     except OSError as exc:
         print(f"six-laws-kit: install error: {exc}", file=sys.stderr)  # noqa: T201
+        manifest["entries"] = record.dedupe_entries(manifest["entries"])
         record.write(manifest, manifest_path)
         raise
+    manifest["entries"] = record.dedupe_entries(manifest["entries"])
     record.write(manifest, manifest_path)
     return manifest_path
 

@@ -1,6 +1,8 @@
 """The `<!-- six-laws-kit:begin/end -->` marker convention used to make a piece of installed text
 findable and removable again. `render` builds one block; `contains` detects one; `insert` appends
-one to the end of a file's text; `strip` removes one back out. All four tolerate CRLF line endings.
+one to the end of a file's text; `strip` removes one back out; `replace_block` swaps an existing
+block's body in place (position and surrounding text untouched) for a re-install whose content has
+changed. All five tolerate CRLF line endings.
 """
 
 from __future__ import annotations
@@ -80,3 +82,33 @@ def strip(text: str, marker_id: str) -> tuple[str, bool]:
     elif text[end : end + 1] == "\n":
         end += 1
     return text[:start] + text[end:], True
+
+
+def replace_block(text: str, marker_id: str, version: int, body: str) -> tuple[str, bool]:
+    """Replace the body of an existing marker block for `marker_id` with `body` (and its version
+    with `version`), in place: the block's position, and everything before and after it, is left
+    untouched. Used on re-install, when the block's content may have changed since the last one
+    (e.g. the registry table gained a row) but simply appending a fresh block would duplicate it.
+    Returns `(new_text, replaced)`; `text` is returned unchanged when the marker is absent or
+    present more than once, mirroring `strip`.
+    """
+    pattern = re.compile(
+        r"(<!-- six-laws-kit:begin id="
+        + re.escape(marker_id)
+        + r" v=)\d+( -->)(\r?\n)"
+        + r".*?"
+        + r"(<!-- six-laws-kit:end id="
+        + re.escape(marker_id)
+        + r" -->)",
+        re.DOTALL,
+    )
+    matches = list(pattern.finditer(text))
+    if len(matches) != 1:
+        return text, False
+    match = matches[0]
+    newline = match.group(3)
+    body_text = body if body.endswith(("\n", "\r\n")) else body + "\n"
+    if newline == "\r\n":
+        body_text = body_text.replace("\r\n", "\n").replace("\n", "\r\n")
+    replacement = f"{match.group(1)}{version}{match.group(2)}{newline}{body_text}{match.group(4)}"
+    return text[: match.start()] + replacement + text[match.end() :], True
