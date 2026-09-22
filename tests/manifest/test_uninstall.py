@@ -72,6 +72,29 @@ def test_apply_then_uninstall_leaves_the_tree_byte_identical(forest_home: Path):
     assert _hash_tree(forest_home) == before
 
 
+def test_round_trip_removes_the_directories_the_install_created(forest_home: Path):
+    run = _make_run(forest_home, {"laws", "routing"})
+    hooks_dir = paths.hooks_dir(run.claude_dir)
+    assert not hooks_dir.exists()
+    assert not hooks_dir.parent.exists()
+
+    plan.build(run)
+    apply.execute(run, lambda *_args: None)
+    assert hooks_dir.is_dir()
+
+    manifest = record.load(paths.manifest_path(run.claude_dir))
+    created_dirs = {Path(entry["path"]) for entry in manifest["entries"] if entry["kind"] == "created_dir"}
+    assert hooks_dir in created_dirs
+    assert hooks_dir.parent in created_dirs
+    assert run.claude_dir not in created_dirs, "dot-claude already existed; must not be tracked"
+
+    uninstall.run(run, ask=_refuse_ask)
+
+    assert not hooks_dir.exists()
+    assert not hooks_dir.parent.exists(), "the now-empty hooks/ parent should be removed too"
+    assert run.claude_dir.exists(), "a directory the install did not create must survive uninstall"
+
+
 def test_uninstall_with_no_manifest_reports_and_returns_zero(forest_home: Path):
     run = _make_run(forest_home, {"laws"})
     assert uninstall.run(run, ask=_refuse_ask) == 0

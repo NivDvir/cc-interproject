@@ -27,7 +27,9 @@ def find_projects(
     skipped. `skipped_roots` only records the ones actually encountered at depth <= 2, so the
     caller can name a few without flooding the UI with every vendored directory buried deep in a
     tree. A symlink (or, on Windows, a reparse point) is never descended into, which is also what
-    keeps a symlink loop from hanging the walk.
+    keeps a symlink loop from hanging the walk. `on_progress` fires every 200 directories and
+    once more, unconditionally, when the walk finishes, so the final call always carries the
+    exact total even when it is not a multiple of 200 (or is 0).
     """
     claude_mds: list[Path] = []
     skipped_roots: list[Path] = []
@@ -67,4 +69,5 @@ def find_projects(
             visit_fn(Path(entry.path), depth + 1)
 
     visit(root, 0)
+    on_progress(dirs_seen)
     return claude_mds, skipped_roots

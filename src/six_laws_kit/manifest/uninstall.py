@@ -57,6 +57,16 @@ def _undo_entry(entry: dict, ask: Callable[[str], bool]) -> None:
         _undo_settings_hooks(entry)
     elif kind == "backup":
         _undo_backup(entry, ask)
+    elif kind == "created_dir":
+        _undo_created_dir(entry)
+
+
+def _undo_created_dir(entry: dict) -> None:
+    path = Path(entry["path"])
+    if not path.is_dir():
+        return
+    with contextlib.suppress(OSError):
+        path.rmdir()  # only succeeds when empty; a non-empty dir is left alone
 
 
 def _undo_created_file(entry: dict, ask: Callable[[str], bool]) -> None:
