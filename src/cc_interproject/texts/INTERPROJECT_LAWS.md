@@ -1,7 +1,6 @@
-<!-- cc-interproject text v1 · derived from the article on running Claude Code projects as a system -->
+<!-- cc-interproject text v1 · derived from the article "The Six Laws for Running Claude Code Projects as a System" -->
 
-This file states the inter-project laws for running several Claude Code projects on one machine
-as peers.
+This file states the six laws for running several Claude Code projects on one machine as peers.
 Every project head reads it before any cross-project work: entering another project, asking it for
 a fact, or asking it to run a tool. Its companions are `PROJECT_REGISTRY.md` (who owns what) and
 `INTERPROJECT_PROTOCOL.md` (how to ask).

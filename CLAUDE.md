@@ -4,8 +4,9 @@ This directory is a **subtree of the `~/opportunity-radar` head**, not a head of
 that project (ruling: `~/opportunity-radar/CLAUDE.md`, "The reader-facing kit is this project's",
 2026-09-22). It has its own git repository because it is published to GitHub; the parent ignores it.
 
-What it is: an installer that lets a reader of the article on running Claude Code projects as a
-system apply the inter-project setup to the Claude Code projects on their own machine.
+What it is: an installer that lets a reader of the article "The Six Laws for Running Claude Code
+Projects as a System" apply the inter-project setup to the Claude Code projects on their own
+machine.
 
 Governing documents, in order: `docs/DESIGN.md` (architecture), `docs/INTERFACES.md` (every
 cross-module signature and the HTTP API — workers build against this, never against each other's

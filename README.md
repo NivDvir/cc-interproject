@@ -1,8 +1,8 @@
 # Claude Code Inter-Project Communication (`cc-interproject`)
 
 An installer that applies the inter-project setup for running several Claude Code projects on one
-machine as a system, as described in the article on running Claude Code projects as a system. It
-is for anyone running more than one Claude Code project on the same machine who
+machine as a system, as described in the article "The Six Laws for Running Claude Code Projects as
+a System." It is for anyone running more than one Claude Code project on the same machine who
 wants those projects to follow a shared ownership and communication protocol. It writes the
 protocol files and lets each chosen project answer for itself. It does not write the article's
 content for you, does not touch anything outside your home directory, and does not run
