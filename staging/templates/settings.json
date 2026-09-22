@@ -1,0 +1,50 @@
+{
+  "model": "sonnet",
+  "env": {
+    "EDITOR": "vim",
+    "PROJECT_NOTES": "~/Documents/notes",
+    "DISABLE_TELEMETRY": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(npm test:*)",
+      "Bash(pytest:*)",
+      "Bash(rg:*)",
+      "Read(~/code/**)",
+      "WebFetch(domain:docs.python.org)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Read(./.env)"
+    ]
+  },
+  "includeCoAuthoredBy": false,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/my-hooks/format-on-write.sh\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": null,
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/my-hooks/prompt-log.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

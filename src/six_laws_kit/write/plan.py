@@ -67,16 +67,23 @@ def _law_file_actions(run: Run) -> list[Action]:
 
 
 def _registry_action(run: Run) -> Action:
+    """Plan `PROJECT_REGISTRY.md`: wrapped in the "registry" marker block from its very first
+    creation, so a re-install can find and refresh it (`blocks.replace_block`) instead of
+    appending a second copy of the table underneath a fresh, unrelated block.
+    """
     target = run.claude_dir / "PROJECT_REGISTRY.md"
     header = loader.read("REGISTRY_HEADER.md")
     body = registry.render(run.rows, run.trees, header)
     if not target.exists():
-        return _create_file_action(target, body)
-    existing_text = target.read_text(encoding="utf-8")
-    if blocks.contains(existing_text, REGISTRY_MARKER):
+        return _create_file_action(target, blocks.render(REGISTRY_MARKER, MARKER_VERSION, body))
+    existing_text = _read_existing(target)
+    if not blocks.contains(existing_text, REGISTRY_MARKER):
+        block = _block_for(REGISTRY_MARKER, body, existing_text)
+        new_text, _leading, _trailing = blocks.insert(existing_text, block)
+        return _insert_block_action(target, REGISTRY_MARKER, existing_text, new_text)
+    new_text, replaced = blocks.replace_block(existing_text, REGISTRY_MARKER, MARKER_VERSION, body)
+    if not replaced:
         return _unchanged_block_action(target, REGISTRY_MARKER, existing_text)
-    block = blocks.render(REGISTRY_MARKER, MARKER_VERSION, body)
-    new_text, _leading, _trailing = blocks.insert(existing_text, block)
     return _insert_block_action(target, REGISTRY_MARKER, existing_text, new_text)
 
 
@@ -84,7 +91,7 @@ def _account_pointer_action(run: Run) -> Action | None:
     part_a = loader.read("ACCOUNT_POINTER.md").split("\n\n---")[0].strip()
     target = run.claude_dir / "CLAUDE.md"
     existed = target.exists()
-    existing_text = target.read_text(encoding="utf-8") if existed else ""
+    existing_text = _read_existing(target) if existed else ""
     if part_a in existing_text:
         return None
     new_text = _append_line(existing_text, part_a)
@@ -113,10 +120,10 @@ def _project_pointer_actions(run: Run) -> list[Action]:
 def _pointer_action_for_tree(tree: Tree, body: str) -> Action | None:
     target = tree.claude_md
     existed = target.exists()
-    existing_text = target.read_text(encoding="utf-8") if existed else ""
+    existing_text = _read_existing(target) if existed else ""
     if blocks.contains(existing_text, POINTER_MARKER):
         return None
-    block = blocks.render(POINTER_MARKER, MARKER_VERSION, body)
+    block = _block_for(POINTER_MARKER, body, existing_text)
     new_text, _leading, _trailing = blocks.insert(existing_text, block)
     diff = _unified_diff(existing_text, new_text, target)
     return Action(
@@ -165,7 +172,7 @@ def _read_hook_source(filename: str) -> str:
 
 def _copy_hook_action(target: Path, payload: str) -> Action:
     existed = target.exists()
-    existing_text = target.read_text(encoding="utf-8") if existed else None
+    existing_text = _read_existing(target) if existed else None
     diff = _unified_diff(existing_text or "", payload, target)
     return Action(
         kind="copy_hook_file",
@@ -236,6 +243,24 @@ def _append_line(existing: str, line: str) -> str:
     if not text.endswith(("\n\n", "\r\n\r\n")):
         text += newline
     return text + line + "\n"
+
+
+def _read_existing(target: Path) -> str:
+    """Read a pre-existing file's exact text: `newline=""` disables universal-newline
+    translation, so a CRLF-authored file (and any BOM, since `encoding="utf-8"` never strips one)
+    round-trips byte-for-byte instead of being silently rewritten as LF.
+    """
+    return target.read_text(encoding="utf-8", newline="")
+
+
+def _block_for(marker_id: str, body: str, existing_text: str) -> str:
+    """Render a marker block whose own begin/end/body line endings match `existing_text`'s, so
+    appending it to a CRLF file does not leave the file with mixed line endings.
+    """
+    block = blocks.render(marker_id, MARKER_VERSION, body)
+    if "\r\n" in existing_text:
+        block = block.replace("\r\n", "\n").replace("\n", "\r\n")
+    return block
 
 
 def _unified_diff(before: str, after: str, target: Path) -> str:

@@ -1,0 +1,8 @@
+{
+  "name": "notes-helper",
+  "version": "0.3.0",
+  "description": "Slash commands for the note-taking workflow.",
+  "author": { "name": "A user" },
+  "commands": ["./commands"],
+  "skills": ["./skills"]
+}

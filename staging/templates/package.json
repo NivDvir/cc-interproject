@@ -1,0 +1,22 @@
+{
+  "name": "storefront-web",
+  "version": "2.4.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router": "6.26.2"
+  },
+  "devDependencies": {
+    "vite": "5.4.8",
+    "vitest": "2.1.2",
+    "typescript": "5.6.2"
+  }
+}

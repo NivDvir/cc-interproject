@@ -87,7 +87,7 @@ def _undo_inserted_block(entry: dict) -> None:
     if not path.exists():
         print(f"six-laws-kit: markers gone, file missing: {path}", file=sys.stderr)  # noqa: T201
         return
-    text = path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8", newline="")
     current_sha = record.sha256(path)
     new_text, found = blocks.strip(text, entry["marker_id"])
     if not found:
